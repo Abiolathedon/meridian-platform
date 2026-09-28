@@ -1,0 +1,24 @@
+# --- Ansible ---
+*.retry
+collections/            # ansible-galaxy installs here — declared in requirements.yml, NEVER committed
+roles/external/         # third-party roles pulled by galaxy
+
+# --- Secrets (NEVER commit) ---
+.vault_pass
+vault_pass.txt
+*.vault
+secrets.yml
+
+# --- Python / tooling ---
+__pycache__/
+*.pyc
+.venv/
+
+# --- Editor / OS noise ---
+.idea/
+*.swp
+.DS_Store
+
+# --- Test caches ---
+.molecule/
+.cache/
