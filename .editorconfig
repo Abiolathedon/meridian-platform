@@ -1,0 +1,11 @@
+# EditorConfig: editor-neutral formatting rules for this repository (https://editorconfig.org)
+# VS Code needs the "EditorConfig for VS Code" extension to read this file
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
