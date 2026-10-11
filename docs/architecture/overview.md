@@ -2,7 +2,7 @@
 
 The Meridian Retail estate (EXODUS lab fleet) as designed under MER-005. This page is the map; the reasons live in `decisions/` (one ADR per decision); the history lives in `../PROJECT-JOURNAL.md`.
 
-**Status:** design in progress (D0–D2 agreed, D3–D9 pending). Sections marked *pending* are filled as each design step is accepted.
+**Status:** design in progress (D0–D3 agreed, D4–D9 pending). Sections marked *pending* are filled as each design step is accepted.
 
 ## Two layers
 
@@ -57,9 +57,29 @@ Naming: environment servers `exodus-<env>-<role>-<nn>`; management keeps `exodus
 
 Host: 32 GB RAM (64 GB planned); all VMs on = 42 GB, so environments are powered on per task (power plan: D8).
 
+## Server map (D3)
+
+Reuse every existing VM; bring each under the role library (codify in place). No rebuilds from the golden image. Full reasoning in [ADR-0003](decisions/ADR-0003-server-map.md).
+
+| Host (now) | IP | Action | Becomes |
+|---|---|---|---|
+| exodus-automation-01 | .158 | keep + codify | — |
+| exodus-ad-01 | .157 | keep + codify | — |
+| exodus-observability-01 | .153 | keep + codify | — |
+| exodus-grafana-01 | .154 | keep + codify | — |
+| exodus-logging-01 | .156 | keep + codify | — |
+| exodus-ingress-01 | .155 | keep + codify | — |
+| exodus-jenkins-01 | .159 | integrate (AD-join, monitor, codify) | — |
+| exodus-platform-01 | .151 | re-role | exodus-dev-app-01 (.190) |
+| exodus-services-01 | .152 | re-role | exodus-prod-app-01 (.163) |
+| exodus-k8s-cp-01 | .160 | integrate | name kept |
+| exodus-k8s-worker-01 | .161 | integrate | name kept |
+| exodus-k8s-worker-02 | .162 | integrate | name kept |
+
+New, built later from code: `exodus-qa-app-01` (.180) · `exodus-staging-app-01` (.170) · `exodus-staging-db-01` (.171) · `exodus-staging-k8s-01` (.172) · `exodus-prod-db-01` (.164).
+
 ## Pending sections
 
-- Server map — keep / rename / re-role / rebuild / new (D3)
 - Access model — service accounts per environment, AD groups per role (D4)
 - Repository and role library layout (D5)
 - Jenkins and Kubernetes placement (D6)
@@ -71,3 +91,4 @@ Host: 32 GB RAM (64 GB planned); all VMs on = 42 GB, so environments are powered
 
 - [ADR-0001 — Environment model](decisions/ADR-0001-environment-model.md)
 - [ADR-0002 — Naming and IP plan](decisions/ADR-0002-naming-and-ip-plan.md)
+- [ADR-0003 — Server map](decisions/ADR-0003-server-map.md)
