@@ -2,7 +2,7 @@
 
 The Meridian Retail estate (EXODUS lab fleet) as designed under MER-005. This page is the map; the reasons live in `decisions/` (one ADR per decision); the history lives in `../PROJECT-JOURNAL.md`.
 
-**Status:** design in progress (D0–D3 agreed, D4–D9 pending). Sections marked *pending* are filled as each design step is accepted.
+**Status:** design in progress (D0–D4 agreed, D5–D9 pending). Sections marked *pending* are filled as each design step is accepted.
 
 ## Two layers
 
@@ -78,9 +78,21 @@ Reuse every existing VM; bring each under the role library (codify in place). No
 
 New, built later from code: `exodus-qa-app-01` (.180) · `exodus-staging-app-01` (.170) · `exodus-staging-db-01` (.171) · `exodus-staging-k8s-01` (.172) · `exodus-prod-db-01` (.164).
 
+## Access model (D4)
+
+Central identity (Active Directory, SSSD + Kerberos), access by per-environment AD group, least privilege. Full reasoning in [ADR-0004](decisions/ADR-0004-access-model.md).
+
+| Concern | Decision |
+|---|---|
+| Identity source | Active Directory (`exodus-ad-01`); Linux via SSSD + Kerberos |
+| Account types | human (`first.last`) · service (`svc-ansible-<env>`) · application · break-glass |
+| Access groups | `sg-mgmt-admins` · `sg-dev-admins` · `sg-qa-admins` · `sg-staging-admins` · `sg-prod-admins` |
+| SSH enforcement | `sshd AllowGroups` admits only the host's env group + break-glass |
+| Privilege | `sudo` via per-group drop-ins in `/etc/sudoers.d/`, no blanket `wheel` |
+| Break-glass | one sealed local account per host; escrowed, logged, alerted |
+
 ## Pending sections
 
-- Access model — service accounts per environment, AD groups per role (D4)
 - Repository and role library layout (D5)
 - Jenkins and Kubernetes placement (D6)
 - Monitoring with environment labels and per-environment alerting (D7)
@@ -92,3 +104,4 @@ New, built later from code: `exodus-qa-app-01` (.180) · `exodus-staging-app-01`
 - [ADR-0001 — Environment model](decisions/ADR-0001-environment-model.md)
 - [ADR-0002 — Naming and IP plan](decisions/ADR-0002-naming-and-ip-plan.md)
 - [ADR-0003 — Server map](decisions/ADR-0003-server-map.md)
+- [ADR-0004 — Access model](decisions/ADR-0004-access-model.md)
