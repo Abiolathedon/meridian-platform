@@ -1,5 +1,11 @@
 ---
 extends: default
+
+# Skip paths that aren't our source — the local virtual-env holds thousands
+# of third-party YAML files (Ansible's own) that we neither own nor commit.
+ignore: |
+  .venv/
+
 rules:
   line-length:
     max: 160
