@@ -1,0 +1,17 @@
+# ansible/.gitignore — keep secrets and local scratch out of Git.
+
+# Vault password file: the plaintext password that unlocks the encrypted vault.yml files.
+# MUST never be committed. ansible.cfg points at it (ansible/.vault-pass).
+.vault-pass
+
+# Ansible / ansible-lint caches and retry files
+.cache/
+*.retry
+
+# Collections installed locally from requirements.yml (we install them, we don't vendor them)
+collections/
+
+# Editor / OS noise
+*.swp
+*~
+.DS_Store 

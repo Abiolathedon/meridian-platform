@@ -1,0 +1,11 @@
+---
+# tasks/main.yml — entry point for the baseline role.
+# An INDEX only: each concern lives in its own file, imported in order.
+
+- name: Common packages
+  ansible.builtin.import_tasks: packages.yml
+
+- name: Time configuration
+  ansible.builtin.import_tasks: time.yml
+
+# E1 adds: repos.yml, ssh.yml, selinux.yml (hardening, tested on dev first)

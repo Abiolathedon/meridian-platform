@@ -1,0 +1,4 @@
+---
+# handlers/main.yml — tasks run only when a task 'notify's them.
+# None yet; sshd/chrony restart handlers arrive with E1 hardening.
+[]

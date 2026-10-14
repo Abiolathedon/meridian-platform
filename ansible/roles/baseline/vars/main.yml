@@ -1,0 +1,13 @@
+---
+# vars/main.yml — INTERNAL constants for the baseline role (not meant to be overridden).
+# These are the genuine differences between OS families (RedHat = RHEL, Debian = Ubuntu).
+
+# The time service to enable, per OS family
+baseline_time_service:
+  RedHat: chronyd
+  Debian: chrony
+
+# SELinux applies only to RHEL; Ubuntu uses AppArmor (handled separately)
+baseline_selinux_supported:
+  RedHat: true
+  Debian: false

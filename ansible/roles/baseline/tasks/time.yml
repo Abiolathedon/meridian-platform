@@ -1,0 +1,12 @@
+---
+# time.yml — set the timezone and ensure the time service runs.
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ baseline_timezone }}"
+
+- name: Ensure the time service is enabled and running
+  ansible.builtin.service:
+    name: "{{ baseline_time_service[ansible_os_family] }}"
+    state: started
+    enabled: true

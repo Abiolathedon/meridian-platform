@@ -1,0 +1,7 @@
+---
+# packages.yml — install the common package set on every host.
+
+- name: Install common packages
+  ansible.builtin.package:
+    name: "{{ baseline_common_packages }}"
+    state: present

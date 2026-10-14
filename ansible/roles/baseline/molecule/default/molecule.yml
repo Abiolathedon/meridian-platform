@@ -1,0 +1,23 @@
+---
+# molecule.yml — the test SCENARIO (how and where Molecule runs).
+
+driver:
+  name: podman # use Podman containers as the test environment (no real VMs)
+
+platforms: # the throwaway machines Molecule builds and tests on
+  - name: rocky9 # a RHEL-9 clone -> ansible_os_family == "RedHat"
+    image: geerlingguy/docker-rockylinux9-ansible:latest
+    pre_build_image: true # image already has Ansible + systemd baked in; don't rebuild
+    command: /usr/sbin/init # start systemd as process #1 so services (chronyd) can run
+    systemd: always # tell Molecule this container runs systemd
+  - name: ubuntu2404 # Ubuntu 24.04 -> ansible_os_family == "Debian"
+    image: geerlingguy/docker-ubuntu2404-ansible:latest
+    pre_build_image: true
+    command: /usr/sbin/init
+    systemd: always
+
+provisioner:
+  name: ansible # Molecule uses Ansible to APPLY the role (converge step)
+
+verifier:
+  name: ansible # Molecule uses Ansible to CHECK the result (verify.yml)

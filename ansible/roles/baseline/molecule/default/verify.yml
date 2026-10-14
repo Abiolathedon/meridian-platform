@@ -1,0 +1,23 @@
+---
+# Molecule "verify" playbook — the role's exam.
+# Molecule runs this AFTER applying the role, to independently prove it worked.
+# Any failed assert below makes the whole molecule test fail.
+
+- name: Verify                         # play name — required by the production profile
+  hosts: all                           # run against every container Molecule created
+  gather_facts: false                  # skip the big fact-gather; we only need packages, collected below
+  tasks:
+
+    - name: Gather the list of installed packages
+      ansible.builtin.package_facts:   # reads the OS package database into a fact
+        manager: auto                  # auto-detect dnf (Rocky) vs apt (Ubuntu)
+
+    - name: Assert the baseline packages are installed
+      ansible.builtin.assert:          # fail the play if any condition below is false
+        that:
+          # vim's package name differs by OS: "vim-enhanced" on Rocky, "vim" on Ubuntu — accept either
+          - "'vim-enhanced' in ansible_facts.packages or 'vim' in ansible_facts.packages"
+          - "'git' in ansible_facts.packages"
+          - "'chrony' in ansible_facts.packages"
+        fail_msg: "Baseline packages missing — the role did not install what it should have"
+        success_msg: "All baseline packages present — baseline role verified"

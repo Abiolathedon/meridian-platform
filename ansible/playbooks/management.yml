@@ -1,0 +1,9 @@
+---
+# management.yml — configure the management/tooling layer.
+# Imported by site.yml; also runnable directly:
+#   ansible-playbook playbooks/management.yml -i inventories/management
+
+- name: Management layer
+  hosts: management
+  roles:
+    - baseline

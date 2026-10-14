@@ -1,0 +1,11 @@
+---
+# identity.yml — AD join, SSSD, Kerberos, AllowGroups (ADR-0004).
+# The identity role is built in E2; this wires it in then. Run explicitly per group.
+
+- name: Identity (AD join + SSSD)
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Placeholder — identity role added in E2
+      ansible.builtin.debug:
+        msg: identity.yml scaffold; the identity role is implemented in E2

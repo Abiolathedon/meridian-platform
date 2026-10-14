@@ -1,0 +1,10 @@
+---
+# bootstrap.yml — first contact for a freshly-cloned VM, BEFORE it joins AD or anything.
+# Run explicitly against the new host; not part of site.yml.
+
+- name: Bootstrap a new host
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Confirm connectivity
+      ansible.builtin.ping:
