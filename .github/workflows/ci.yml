@@ -1,26 +1,23 @@
 ---
-name: ci                         # workflow name shown in the Actions tab + as the "lint" check
-on:                              # triggers: what makes this workflow run
-  pull_request:                  # run on every PR (this is what branch protection gates on)
+name: ci
+on:
+  pull_request:
   push:
-    branches: [main]             # also run on direct pushes to main (belt-and-braces)
+    branches: [main]
 
 jobs:
-  lint:                          # job id "lint" — MUST stay this name (branch protection requires it)
-    runs-on: ubuntu-latest       # GitHub-hosted runner VM
+  lint:
+    runs-on: ubuntu-latest
     steps:
-      # pin the action to a commit SHA (supply-chain safety), comment records the human version
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-
+      # Pin the linters to the SAME versions as the local venv (RHEL's ansible-core 2.14,
+      # ansible-lint < 24) so CI and local never drift apart.
       - name: Install linters
-        run: pip install yamllint ansible-core ansible-lint   # all three Python tools in one layer
-
+        run: pip install "yamllint<2" "ansible-core==2.14.*" "ansible-lint<24"
       - name: Run yamllint
-        run: yamllint .          # raw YAML formatting, whole repo (unchanged from before)
-
+        run: yamllint .
       - name: Install Ansible collections
-        run: ansible-galaxy collection install -r ansible/requirements.yml   # so FQCN modules resolve
-
+        run: ansible-galaxy collection install -r ansible/requirements.yml
       - name: Run ansible-lint
-        working-directory: ansible   # run from ansible/ so it finds .ansible-lint + roles/playbooks
-        run: ansible-lint            # lints roles + playbooks against the production profile
+        working-directory: ansible
+        run: ansible-lint
