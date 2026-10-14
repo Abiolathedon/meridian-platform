@@ -1,0 +1,9 @@
+---
+# environment.yml — configure an environment's hosts (app / db / k8s groups).
+# Imported by site.yml; run with one environment's inventory:
+#   ansible-playbook playbooks/environment.yml -i inventories/dev
+
+- name: Environment
+  hosts: app:db:k8s
+  roles:
+    - baseline

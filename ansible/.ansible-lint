@@ -1,0 +1,10 @@
+---
+# .ansible-lint — quality and style checks for roles and playbooks.
+# Run locally:  ansible-lint
+# (we wire this into CI later in this ticket, alongside yamllint)
+
+profile: production
+
+exclude_paths:
+  - .cache/
+  - .github/

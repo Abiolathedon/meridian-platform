@@ -1,0 +1,23 @@
+---
+# meta/main.yml — the role's identity card: author, what it supports, dependencies.
+
+galaxy_info:
+  role_name: baseline
+  author: Abiola Osota
+  description: Base OS configuration for every EXODUS host (packages, time, repos, SSH, SELinux).
+  company: Meridian Retail (lab)
+  license: MIT
+  min_ansible_version: "2.14"       # matches the engine we actually run (RHEL's 2.14)
+  platforms:
+    - name: EL                       # EL = Enterprise Linux (RHEL / Rocky / Alma)
+      versions:
+        - "9"
+    - name: Ubuntu
+      versions:
+        - all                        # "all" = any Ubuntu version (schema rejects the codename "noble")
+  galaxy_tags:
+    - baseline
+    - rhel
+    - ubuntu
+
+dependencies: []                     # this role depends on no other roles

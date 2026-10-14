@@ -1,0 +1,13 @@
+---
+# site.yml — master playbook. One run brings every host in the selected inventory
+# to its desired state by importing the layer playbooks below.
+# Run one environment at a time:
+#   ansible-playbook site.yml -i inventories/dev
+#   ansible-playbook site.yml -i inventories/prod --limit prod
+# Each layer only acts on hosts that exist in the chosen inventory; the rest are skipped.
+
+- name: Management layer
+  ansible.builtin.import_playbook: playbooks/management.yml
+
+- name: Environment layer
+  ansible.builtin.import_playbook: playbooks/environment.yml

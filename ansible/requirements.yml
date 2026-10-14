@@ -1,0 +1,14 @@
+---
+# requirements.yml — Galaxy collections the platform depends on.
+# Install:  ansible-galaxy collection install -r requirements.yml
+# After first install, freeze to exact versions (ansible-galaxy collection list) for reproducibility.
+
+collections:
+  - name: community.general
+    version: ">=8.0.0"
+  - name: ansible.posix
+    version: ">=1.5.0"
+  - name: ansible.utils
+    version: ">=2.11.0"
+  - name: community.crypto
+    version: ">=2.16.0"

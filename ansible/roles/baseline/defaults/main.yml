@@ -1,0 +1,23 @@
+---
+# defaults/main.yml — DEFAULT variables for the baseline role.
+# Lowest precedence: any inventory group_vars/host_vars can override these.
+
+# Packages installed on every host (names here exist on both RHEL and Ubuntu)
+baseline_common_packages:
+  - vim
+  - curl
+  - git
+  - htop
+  - chrony
+
+# Time
+baseline_timezone: "Europe/London"
+baseline_ntp_servers:
+  - "exodus-ad-01.exodus.local"
+
+# SSH hardening (key-only, no root)
+baseline_ssh_permit_root_login: "no"
+baseline_ssh_password_authentication: "no"
+
+# SELinux target state (RHEL family)
+baseline_selinux_state: enforcing

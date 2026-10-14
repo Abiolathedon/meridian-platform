@@ -1,0 +1,8 @@
+---
+# converge.yml — APPLY the baseline role to every test container.
+
+- name: Converge            # the play's label (shown in output)
+  hosts: all                # run against every container listed under platforms
+  become: true              # act as root (installing packages needs root)
+  roles:
+    - role: baseline        # the role we are testing
