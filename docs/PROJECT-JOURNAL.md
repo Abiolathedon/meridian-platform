@@ -3,15 +3,24 @@
 The running record of this project: what was done, when, why, where we are, and what is next.
 Newest entry first. A ticket is not Done until its entry is here. Read **Current state** first.
 
-## Current state (updated 2026-10-11)
+## Current state (updated 2026-10-15)
 
-- **Phase:** C — Build the estate as code · **Sprint 0 — Foundation** (repo, CI, work management, protection, design) — design complete
-- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9)
-- **In progress:** — (Sprint 0 design complete; building begins)
+- **Phase:** C — Build the estate as code · **Sprint 0 — Foundation** — design complete; building underway
+- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9) · MER-006 E0 foundation (Ansible scaffold + baseline role)
+- **In progress:** —
 - **Fleet:** 12 VMs on VMware Workstation, 192.168.0.0/24, static block .150–.200; see `architecture/overview.md`
 - **Working rules:** record-first — the record is context, not a cage: study the old project, keep what is good, rebuild what was weak properly; one ADR per decision; every change via ticket → branch → PR → CI → review → squash merge
 - **Prior project:** `exodus-change-management` (its own CR-001–CR-013, ADR series) and the masterfile `EXODUS_AUTHORITATIVE_MASTER_ARCHIVE.yaml` — read-only history, referenced not copied
-- **Next:** Build — E0 foundation (repo + role library, baseline role) then E1, dev-first on exodus-dev-app-01
+- **Next:** E1 — run full Molecule test on `baseline`, then apply it to `exodus-dev-app-01` (dev-first), manual-first
+
+## 2026-10-14 — MER-006 E0 foundation: Ansible scaffold + baseline role — DONE
+
+- **What:** scaffolded `ansible/` per ADR-0005 — `ansible.cfg`, pinned `requirements.yml`, production-profile `.ansible-lint`, README, `.gitignore`; `site.yml` importing management + environment playbooks; bootstrap/identity helpers; per-env inventory skeleton (management/dev/qa/staging/prod, `group_vars`/`host_vars`) kept with `.gitkeep`; `baseline` role — OS-aware common packages + timezone/NTP (RHEL/Ubuntu) with a Molecule scaffold (not yet run). ansible-lint wired into the CI lint job.
+- **Why:** E0 is the build gate — the estate-as-code needs its Ansible home before any role can be written.
+- **CI hardening:** pinned CI to Python 3.11 + ansible-core 2.14 + ansible-lint <24 to match the control node; closed a real drift (ansible-core 2.14 crashes on CI's default Python 3.12).
+- **Verified:** `ansible-lint` PASS (production profile); `ansible-playbook --syntax-check` PASS; CI `lint` green.
+- **Deferred to E1 (Marcus L3 review):** full `molecule test` (podman + images); populate inventories and apply `baseline` to `exodus-dev-app-01`; implement or trim the unused SSH/SELinux defaults.
+- **Refs:** issue #11 · PR #12 `ba70a4e` · note `MER-006_E0-foundation-ansible-scaffold.docx`
 
 ## 2026-10-07 — MER-005 fleet architecture design — DONE
 
