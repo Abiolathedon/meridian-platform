@@ -1,6 +1,15 @@
 ---
 # packages.yml — install the common package set on every host.
 
+# Debian/Ubuntu images ship with an EMPTY package index, so refresh it first or
+# apt won't find anything ("No package matching 'vim'"). RHEL/dnf refreshes its
+# metadata automatically, so this step is Debian-only.
+- name: Refresh the apt cache (Debian family only)
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600          # skip if the cache was refreshed in the last hour
+  when: ansible_os_family == "Debian"
+
 - name: Install common packages
   ansible.builtin.package:
     name: "{{ baseline_common_packages }}"
