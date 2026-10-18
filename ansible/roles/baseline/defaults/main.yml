@@ -2,10 +2,11 @@
 # defaults/main.yml — DEFAULT variables for the baseline role.
 # Lowest precedence: any inventory group_vars/host_vars can override these.
 
-# Packages installed on every host (names here exist on both RHEL and Ubuntu)
+# Packages installed on every host (names here install cleanly on BOTH RHEL and Ubuntu).
+# NOTE: 'curl' is deliberately NOT listed — RHEL 9 ships 'curl-minimal', which already
+# provides the curl command and conflicts with the full 'curl' package.
 baseline_common_packages:
   - vim
-  - curl
   - git
   - htop
   - chrony
@@ -14,6 +15,14 @@ baseline_common_packages:
 baseline_timezone: "Europe/London"
 baseline_ntp_servers:
   - "exodus-ad-01.exodus.local"
+
+# Whether this role should actively START the time service (not just enable it).
+#   true  = enable AND start it now — correct for real servers (this is the default).
+#   false = enable only, don't start.
+# USED BY:       tasks/time.yml  (the "Ensure the time service is running now" task's when:)
+# OVERRIDDEN BY: molecule/default/molecule.yml  (sets this false — a rootless container
+#                can't run a clock daemon, adjtimex is denied).
+baseline_manage_time_service_state: true
 
 # SSH hardening (key-only, no root)
 baseline_ssh_permit_root_login: "no"

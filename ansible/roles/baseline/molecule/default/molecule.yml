@@ -1,23 +1,29 @@
----
-# molecule.yml — the test SCENARIO (how and where Molecule runs).
+---                                 # YAML document start marker
 
-driver:
-  name: podman # use Podman containers as the test environment (no real VMs)
+driver:                             # KEY: which "driver" Molecule uses to build the test machines
+  name: podman                      #   VALUE: use Podman (rootless containers) as the test machines
 
-platforms: # the throwaway machines Molecule builds and tests on
-  - name: rocky9 # a RHEL-9 clone -> ansible_os_family == "RedHat"
-    image: geerlingguy/docker-rockylinux9-ansible:latest
-    pre_build_image: true # image already has Ansible + systemd baked in; don't rebuild
-    command: /usr/sbin/init # start systemd as process #1 so services (chronyd) can run
-    systemd: always # tell Molecule this container runs systemd
-  - name: ubuntu2404 # Ubuntu 24.04 -> ansible_os_family == "Debian"
-    image: geerlingguy/docker-ubuntu2404-ansible:latest
-    pre_build_image: true
-    command: /usr/sbin/init
-    systemd: always
+platforms:                          # KEY: the list of test machines Molecule will create (one '- name:' each)
+  - name: rocky9                    #   test host #1 — our RHEL-family stand-in
+    image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest   # fully-qualified image so Podman doesn't ask "which registry?"
+    pre_build_image: true           #   use the image AS-IS (already systemd-ready); don't rebuild it
+    command: /usr/sbin/init         #   run systemd (PID 1) so services can exist inside the container
+    systemd: always                 #   wire up the cgroup/tmpfs bits systemd needs
+  - name: ubuntu2404                #   test host #2 — our Debian-family stand-in
+    image: docker.io/geerlingguy/docker-ubuntu2404-ansible:latest    # fully-qualified Ubuntu 24.04 image, also systemd-ready
+    pre_build_image: true           #   use the image as-is
+    command: /usr/sbin/init         #   boot systemd inside the container
+    systemd: always                 #   wire up the systemd requirements
 
-provisioner:
-  name: ansible # Molecule uses Ansible to APPLY the role (converge step)
+provisioner:                        # KEY: the engine that RUNS the role against the platforms
+  name: ansible                     #   VALUE: Ansible runs the role
+  inventory:                        #   inject inventory data into the test run
+    group_vars:                     #     variables applied per host-group
+      all:                          #       'all' = every container in this scenario
+        # Containers can't run a clock daemon (rootless can't touch the host clock), so override
+        # the role default (defined in defaults/main.yml) and tell baseline to enable-but-NOT-start
+        # the time service here. Consumed in tasks/time.yml (the "running now" task's when:).
+        baseline_manage_time_service_state: false
 
-verifier:
-  name: ansible # Molecule uses Ansible to CHECK the result (verify.yml)
+verifier:                           # KEY: the engine that CHECKS the result after converge
+  name: ansible                     #   VALUE: run verify.yml (molecule/default/verify.yml) to assert the box is correct

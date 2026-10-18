@@ -1,12 +1,28 @@
 ---
-# time.yml — set the timezone and ensure the time service runs.
+# time.yml — set the timezone, enable the time service everywhere,
+# and start it only where the platform allows a clock daemon to run.
 
+# TASK 1 — set the system timezone.
 - name: Set timezone
   community.general.timezone:
+    # baseline_timezone is defined in defaults/main.yml (e.g. "Europe/London")
     name: "{{ baseline_timezone }}"
 
-- name: Ensure the time service is enabled and running
+# TASK 2 — make sure the time service is set to start on every boot (enable only — no start here).
+- name: Ensure the time service is enabled (starts automatically on boot)
   ansible.builtin.service:
+    # Service NAME is chosen by a dictionary lookup:
+    #   baseline_time_service -> a map defined in vars/main.yml  (RedHat: chronyd / Debian: chrony)
+    #   ansible_os_family     -> a fact Ansible gathers at runtime ("RedHat" or "Debian")
+    # => resolves to "chronyd" on Rocky, "chrony" on Ubuntu.
+    name: "{{ baseline_time_service[ansible_os_family] }}"
+    enabled: true
+
+# TASK 3 — actually start the service now, but ONLY where a clock daemon is allowed to run.
+- name: Ensure the time service is running now
+  ansible.builtin.service:
+    # same OS-aware service name as above
     name: "{{ baseline_time_service[ansible_os_family] }}"
     state: started
-    enabled: true
+  # Run this task only when the switch is ON (true on real servers; the Molecule test sets it false).
+  when: baseline_manage_time_service_state | bool
