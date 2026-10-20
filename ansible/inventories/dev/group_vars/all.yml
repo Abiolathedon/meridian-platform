@@ -1,0 +1,5 @@
+---
+# all.yml — connection settings shared by EVERY host in the dev inventory.
+
+ansible_user: svc-ansible                                # dedicated automation account (exodus-admin is break-glass only)
+ansible_ssh_private_key_file: ~/.ssh/id_ed25519_ansible  # same automation key — svc-ansible now trusts it
