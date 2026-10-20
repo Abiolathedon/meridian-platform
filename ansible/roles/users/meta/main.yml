@@ -1,0 +1,24 @@
+---
+# meta/main.yml — the role's "identity card": its name, author, and what OSes it supports.
+
+galaxy_info:
+  namespace: meridian                 # our namespace → the full role name becomes "meridian.users"
+  role_name: users                    # the role's own name
+  author: Abiola Osota                 # who wrote it
+  description: Create and manage EXODUS service/admin accounts (SSH key + sudo).
+  company: Meridian Retail (lab)       # the (fictional) company
+  license: MIT                         # the licence
+  min_ansible_version: "2.14"          # the oldest Ansible this role expects (matches our fleet + CI)
+  platforms:                           # which operating systems this role supports
+    - name: EL                         # EL = Enterprise Linux (RHEL / Rocky / Alma)
+      versions:
+        - "9"                          # version 9
+    - name: Ubuntu                     # and Ubuntu
+      versions:
+        - all                          # any Ubuntu version
+  galaxy_tags:                         # simple labels describing the role
+    - users
+    - sudo
+    - ssh
+
+dependencies: []                       # this role needs no other roles to run first

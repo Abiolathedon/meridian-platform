@@ -1,0 +1,12 @@
+---
+# defaults/main.yml — the accounts this role creates. Override per inventory if needed.
+
+# Each list item = one account, with everything the role needs to set it up.
+users_accounts:
+  - name: svc-ansible                                 # the login name
+    comment: "Ansible automation service account"     # description stored in /etc/passwd
+    shell: /bin/bash                                   # login shell
+    sudo_nopasswd: true                                # true = give it passwordless sudo
+    ssh_allow: true                                    # true = add it to sshd AllowUsers (allowed to log in)
+    # the PUBLIC key allowed to log in as this account (the control node's Ansible key):
+    authorized_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGnyc8LJVFykd/49wALcXt3ghS1cSI3L5Copj+CPCJfT exodus-admin@exodus-automation-01"

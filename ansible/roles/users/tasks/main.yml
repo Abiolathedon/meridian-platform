@@ -1,0 +1,48 @@
+---
+# tasks/main.yml — the actual work: for each account in our list, create the user,
+# give it an SSH key, and give it sudo.
+
+- name: Create the user account                         # STEP 1: make the Linux login account
+  ansible.builtin.user:                                 # the tool that creates/changes Linux users
+    name: "{{ item.name }}"                             # the account's name (e.g. svc-ansible) — taken from our list
+    comment: "{{ item.comment | default(omit) }}"       # a short description for it (skip if we didn't give one)
+    shell: "{{ item.shell | default('/bin/bash') }}"    # the shell it gets when it logs in (bash if we didn't say)
+    create_home: true                                   # also make its home folder, /home/<name>
+  loop: "{{ users_accounts }}"                          # do all this once for EACH account in our list
+  loop_control:
+    label: "{{ item.name }}"                            # in the output, just show the account's name (keeps it tidy)
+
+- name: Ensure the account's .ssh directory exists      # STEP 2: make the account's private .ssh folder
+  ansible.builtin.file:                                 # the tool that makes folders/files and sets permissions
+    path: "/home/{{ item.name }}/.ssh"                  # the folder to make, e.g. /home/svc-ansible/.ssh
+    state: directory                                    # "directory" = make sure this is a folder
+    owner: "{{ item.name }}"                            # the folder belongs to the account
+    group: "{{ item.name }}"                            # ...and to the account's group
+    mode: "0700"                                        # only the account can open it (SSH insists on this)
+  loop: "{{ users_accounts }}"                          # again, once for each account
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Install the account's authorized SSH key        # STEP 3: put the trusted key in the account's guest list
+  ansible.builtin.copy:                                 # the tool that writes text into a file
+    dest: "/home/{{ item.name }}/.ssh/authorized_keys"  # the file to write, e.g. /home/svc-ansible/.ssh/authorized_keys
+    content: "{{ item.authorized_key }}\n"              # what to write: the account's public key (from our list)
+    owner: "{{ item.name }}"                            # the file belongs to the account
+    group: "{{ item.name }}"                            # ...and its group
+    mode: "0600"                                        # only the account can read/write it (SSH insists on this)
+  loop: "{{ users_accounts }}"                          # once per account
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Grant passwordless sudo (validated drop-in)     # STEP 4: let the account use sudo without a password
+  ansible.builtin.copy:                                 # same "write text into a file" tool
+    dest: "/etc/sudoers.d/{{ item.name }}"              # the sudo-rule file, e.g. /etc/sudoers.d/svc-ansible
+    content: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL\n" # the rule: this account may run sudo with NO password
+    owner: root                                         # sudo-rule files must belong to root
+    group: root                                         # ...and root's group
+    mode: "0440"                                        # read-only (sudo refuses the file otherwise)
+    validate: "visudo -cf %s"                           # check the rule is valid BEFORE saving (so we can't break sudo)
+  loop: "{{ users_accounts }}"                          # once per account
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.sudo_nopasswd | default(false)             # only do this for accounts we marked as needing sudo
