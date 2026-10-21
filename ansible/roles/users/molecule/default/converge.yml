@@ -6,4 +6,3 @@
   become: true             # run as root — our role creates users and writes /etc/sudoers.d, which need root
   roles:                   # the list of roles to apply on these boxes
     - role: users          # apply OUR users role (which runs tasks/main.yml using defaults/main.yml)
-    
