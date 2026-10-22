@@ -1,0 +1,25 @@
+---                                 # YAML file start marker
+
+# molecule.yml — tells Molecule WHERE and HOW to test the role:
+# build two throwaway practice computers, run the role on them, check it, bin them.
+
+driver:                             # "driver" = what kind of test machines to use
+  name: podman                      # use Podman containers (lightweight, throwaway computers)
+
+platforms:                          # "platforms" = the list of test machines to build
+  - name: rocky9                    # test machine #1, named rocky9 (a Rocky / RHEL-family box)
+    image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest   # the ready-made image to build it from
+    pre_build_image: true           # image is already set up — just use it, don't rebuild
+    command: /usr/sbin/init         # boot it like a real server (start systemd inside)
+    systemd: always                 # tell Molecule this box runs systemd
+  - name: ubuntu2404                # test machine #2, named ubuntu2404 (an Ubuntu / Debian-family box)
+    image: docker.io/geerlingguy/docker-ubuntu2404-ansible:latest    # the ready-made Ubuntu image
+    pre_build_image: true           # use it as-is
+    command: /usr/sbin/init         # boot it like a real server
+    systemd: always                 # it runs systemd too
+
+provisioner:                        # "provisioner" = the part that APPLIES the role to the machines
+  name: ansible                     # use Ansible to apply it (it runs converge.yml)
+
+verifier:                           # "verifier" = the part that CHECKS the result afterwards
+  name: ansible                     # use Ansible to check it (it runs verify.yml)

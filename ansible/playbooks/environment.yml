@@ -4,6 +4,8 @@
 #   ansible-playbook playbooks/environment.yml -i inventories/dev
 
 - name: Environment
-  hosts: app:db:k8s
+  hosts: app:db:k8s            # all app/db/k8s hosts in the chosen inventory
+  become: true                 # run as ROOT — roles install packages, create users, write sudo files
   roles:
-    - baseline
+    - baseline                 # base OS config (packages, time)
+    - users                    # create service/admin accounts (svc-ansible: key + sudo)

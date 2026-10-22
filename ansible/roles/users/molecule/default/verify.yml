@@ -1,0 +1,45 @@
+---                                           # YAML file start marker
+# verify.yml — the EXAM Molecule runs after the role, to prove it really worked.
+
+- name: Verify                                # play name — Molecule expects "Verify"
+  hosts: all                                  # check every test box (rocky9, ubuntu2404)
+  gather_facts: false                         # skip the big info-gather; we only check a few specific things
+  tasks:
+
+    - name: Look up the svc-ansible account   # ask the box about the svc-ansible user
+      ansible.builtin.getent:                 # tool that reads the system's user list
+        database: passwd                      # look in "passwd" = the list of users
+        key: svc-ansible                      # specifically the svc-ansible entry
+
+    - name: Check the svc-ansible user exists # fail the exam if the user isn't there
+      ansible.builtin.assert:                 # tool that PASSES if true, FAILS if false
+        that:
+          - "'svc-ansible' in ansible_facts.getent_passwd"   # svc-ansible must be in the user list
+        fail_msg: "svc-ansible user was NOT created"
+        success_msg: "svc-ansible user is present"
+
+    - name: Look at the sudo rule file        # check the sudo drop-in
+      ansible.builtin.stat:                   # tool that reads a file's details (exists? permissions?)
+        path: /etc/sudoers.d/svc-ansible      # the file the role should have written
+      register: sudoers_file                  # save what we found into a variable called sudoers_file
+
+    - name: Check the sudo file is present and locked
+      ansible.builtin.assert:
+        that:
+          - sudoers_file.stat.exists          # the file must exist
+          - sudoers_file.stat.mode == '0440'  # ...and be read-only (0440)
+        fail_msg: "sudoers drop-in missing or wrong permissions"
+        success_msg: "sudoers drop-in present and 0440"
+
+    - name: Look at the SSH key file          # check authorized_keys
+      ansible.builtin.stat:
+        path: /home/svc-ansible/.ssh/authorized_keys   # the key file the role should have written
+      register: ak                            # save the result as "ak"
+
+    - name: Check the key file is present and locked
+      ansible.builtin.assert:
+        that:
+          - ak.stat.exists                    # the key file must exist
+          - ak.stat.mode == '0600'            # ...and be owner-only (0600)
+        fail_msg: "authorized_keys missing or wrong permissions"
+        success_msg: "authorized_keys present and 0600"

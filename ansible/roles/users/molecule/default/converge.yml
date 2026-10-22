@@ -1,0 +1,8 @@
+---                        # YAML file start marker
+# converge.yml — the play Molecule runs to APPLY our role to the test machines.
+
+- name: Converge           # the play's name — Molecule expects this file to hold a play called "Converge"
+  hosts: all               # run it on ALL the test boxes Molecule built (rocky9 and ubuntu2404)
+  become: true             # run as root — our role creates users and writes /etc/sudoers.d, which need root
+  roles:                   # the list of roles to apply on these boxes
+    - role: users          # apply OUR users role (which runs tasks/main.yml using defaults/main.yml)
