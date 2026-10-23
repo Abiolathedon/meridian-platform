@@ -9,3 +9,4 @@
   roles:
     - baseline                 # base OS config (packages, time)
     - users                    # create service/admin accounts (svc-ansible: key + sudo)
+    - dns_resolver             # enforce the correct DNS resolver (AD DNS, 192.168.0.157)

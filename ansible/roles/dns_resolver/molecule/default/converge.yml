@@ -1,0 +1,8 @@
+---
+# converge.yml — the play Molecule runs to APPLY our role to the test boxes.
+
+- name: Converge              # Molecule expects a play named "Converge"
+  hosts: all                  # run on both test boxes (rocky9, ubuntu2404)
+  become: true                # run as root
+  roles:
+    - role: dns_resolver      # apply OUR dns_resolver role

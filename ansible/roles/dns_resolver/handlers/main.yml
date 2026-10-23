@@ -1,0 +1,17 @@
+---
+# handlers file for dns_resolver
+# ------------------------------------------------------------------
+# A handler only runs when a task "notifies" it, and only once, at the
+# end of the play. This one re-applies the connection so NetworkManager
+# rewrites /etc/resolv.conf with the new DNS we just set.
+
+- name: Reload network connection
+  # [MODULE] ansible.builtin.command -> run a plain command (nmcli).
+  ansible.builtin.command: >
+    nmcli device reapply {{ dns_resolver_connection_name }}
+  # [KEYWORD] become: true -> root; network operations need privilege.
+  become: true
+  # [KEYWORD] changed_when: true -> a reload is an action, not a state we
+  #           can measure, so we explicitly mark it as "changed" so its
+  #           effect is visible in the play output.
+  changed_when: true

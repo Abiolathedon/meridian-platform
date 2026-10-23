@@ -1,0 +1,32 @@
+---
+# molecule.yml — tells Molecule WHERE and HOW to test: build two throwaway
+# container "computers", run the role on them, check it, then bin them.
+
+driver:
+  name: podman                      # use Podman containers as the test machines
+
+platforms:
+  - name: rocky9                    # test box #1 — RHEL-family
+    image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
+    pre_build_image: true
+    command: /usr/sbin/init         # boot systemd, like a real server
+    systemd: always
+  - name: ubuntu2404                # test box #2 — Ubuntu
+    image: docker.io/geerlingguy/docker-ubuntu2404-ansible:latest
+    pre_build_image: true
+    command: /usr/sbin/init
+    systemd: always
+
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        # Containers don't run NetworkManager, so flip the role's safety
+        # switch OFF here. The nmcli task skips, the role runs clean, and we
+        # prove structure/syntax without NetworkManager. The REAL functional
+        # test (DNS .1 -> .157) happens on the dev VM via the snapshot test.
+        dns_resolver_apply: false
+
+verifier:
+  name: ansible

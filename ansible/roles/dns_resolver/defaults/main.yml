@@ -1,0 +1,19 @@
+---
+# defaults file for dns_resolver
+# ------------------------------------------------------------------
+# These are the DEFAULT settings (the "knobs") for this role.
+# Defaults are the lowest-priority variables, so they can be
+# overridden per-host or per-group later without touching the role.
+
+# The DNS server every node SHOULD use: the AD/DNS box
+# (exodus-ad-01 at 192.168.0.157). This is the value the role enforces.
+dns_resolver_correct_dns: "192.168.0.157"
+
+# Which NetworkManager connection profile to fix on each node.
+# On the fleet this is "ens160" (the primary ethernet interface).
+dns_resolver_connection_name: "ens160"
+
+# Safety switch. True (the default on real hosts) = apply the DNS change.
+# Molecule flips this to false for its container test, because containers
+# don't run NetworkManager — so the role runs clean without driving nmcli.
+dns_resolver_apply: true

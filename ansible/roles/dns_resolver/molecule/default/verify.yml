@@ -1,0 +1,27 @@
+---
+# verify.yml — the check Molecule runs after the role.
+#
+# NOTE: in containers the nmcli task is skipped (no NetworkManager), so we
+# can't verify a real DNS change here — that's proven on the dev VM. What we
+# CAN prove is that the role's variables file is valid and holds the values
+# we expect (a smoke test).
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+
+    - name: Load the role's default variables from its defaults file
+      # [MODULE] include_vars -> read a vars file into this play so we can
+      #          check it. The path is relative to this verify.yml:
+      #          ../../defaults/main.yml = the role's defaults/main.yml.
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../../defaults/main.yml"
+
+    - name: Confirm the DNS defaults are what we expect
+      ansible.builtin.assert:    # passes if all 'that' conditions are true, else fails
+        that:
+          - dns_resolver_correct_dns == "192.168.0.157"
+          - dns_resolver_connection_name == "ens160"
+        fail_msg: "dns_resolver defaults are wrong or missing"
+        success_msg: "dns_resolver defaults resolved correctly (smoke test passed)"
