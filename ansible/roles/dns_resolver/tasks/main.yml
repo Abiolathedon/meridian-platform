@@ -1,0 +1,31 @@
+---
+# tasks file for dns_resolver
+# ------------------------------------------------------------------
+# The work: make sure this machine's DNS points at the correct
+# server (from defaults), replacing whatever wrong value is there.
+
+- name: Ensure the correct DNS server is set on the network connection
+  # [MODULE] community.general.nmcli -> manage a NetworkManager connection
+  #          declaratively: we describe the end state, Ansible makes it so.
+  community.general.nmcli:
+    # [PARAM] conn_name -> which connection profile to modify (from defaults).
+    conn_name: "{{ dns_resolver_connection_name }}"
+    # [PARAM] type -> the connection type; our fleet interface is ethernet.
+    type: ethernet
+    # [PARAM] dns4 -> the DNS server(s) we want. It's a list, so we could
+    #         set more than one later; for now just the AD DNS from defaults.
+    dns4:
+      - "{{ dns_resolver_correct_dns }}"
+    # [PARAM] state: present -> ensure this setting is applied.
+    state: present
+  # [KEYWORD] become: true -> run as root; network config needs privilege.
+  become: true
+  # [KEYWORD] notify -> ONLY if nmcli actually changed something, trigger the
+  #           "Reload network connection" handler to apply it live. No change
+  #           = no reload. This is what keeps the role idempotent.
+  notify: Reload network connection
+
+  # [KEYWORD] when -> only run if the safety switch is on. Real hosts keep
+  #           dns_resolver_apply=true so it runs; Molecule sets it false so
+  #           the container test skips nmcli (no NetworkManager there).
+  when: dns_resolver_apply | bool
