@@ -1,0 +1,81 @@
+---
+# tasks/main.yml — parity_check AUDIT (READ-ONLY, except it writes a report).
+# Compares the host's current state to the golden known-good values
+# (defaults/main.yml), writes templates/parity-report.j2 to the host, and
+# — in GATE mode only — fails on drift. Uses gathered facts
+# (ansible_selinux, ansible_machine_id, ansible_hostname), on by default.
+
+- name: Audit this host against the golden image
+  when: parity_check_apply | bool    # Molecule sets this false to skip in a container
+  become: true                       # sshd -T + writing to /var/log need root
+  block:
+
+    # -- Read firewalld state (the gathered facts don't provide this) --
+    - name: Read firewalld active state
+      ansible.builtin.command: systemctl is-active firewalld  # noqa: command-instead-of-module
+      register: parity_check_firewalld        # actual firewalld state -> used in the assert below
+      changed_when: false                      # just reading; never a change
+      failed_when: false                       # "inactive" returns non-zero rc; we want the value, not a failure
+
+    # -- Read the global SSH PasswordAuthentication setting ------------
+    - name: Read the effective global SSH PasswordAuthentication
+      # [MODULE] ansible.builtin.shell -> we need a pipe, so shell (not command).
+      ansible.builtin.shell: set -o pipefail; sshd -T | awk '/^passwordauthentication/ {print $2}'
+      args:
+        executable: /bin/bash                  # "set -o pipefail" is a bash feature
+      register: parity_check_sshpw             # actual SSH password-auth value -> used in the assert below
+      changed_when: false                      # just reading; never a change
+
+    # -- Write the parity report to the host --------------------------
+    - name: Write the parity report
+      # [MODULE] ansible.builtin.template -> render templates/parity-report.j2 (which marks
+      #          each check PASS/DRIFT) and write it to the host.
+      ansible.builtin.template:
+        src: parity-report.j2
+        dest: "{{ parity_check_report_path }}"   # where to write -> parity_check_report_path (defaults/main.yml)
+        owner: root
+        group: root
+        mode: "0644"
+
+    # -- Point the user at the report ---------------------------------
+    - name: Show where the report was written
+      ansible.builtin.debug:
+        msg: "Parity report written to {{ parity_check_report_path }}"
+
+    # -- GATE mode only: fail the play if anything drifted ------------
+    - name: Fail on any parity drift (gate mode)
+      ansible.builtin.assert:
+        that:
+          # ======== BUCKET A — INHERITANCE: must MATCH golden ========
+          # These are golden's hardening settings; a true clone still has them.
+
+          # SELinux must still be Enforcing.
+          #   actual   -> ansible_selinux.config_mode    (gathered fact)
+          #   expected -> parity_check_expected_selinux   (defaults/main.yml)
+          - (ansible_selinux.config_mode | lower) == (parity_check_expected_selinux | lower)
+
+          # firewalld must be running.
+          #   actual   -> parity_check_firewalld.stdout          (the "Read firewalld active state" task above)
+          #   expected -> parity_check_expected_firewalld_state  (defaults/main.yml)
+          - parity_check_firewalld.stdout == parity_check_expected_firewalld_state
+
+          # SSH must globally refuse password logins.
+          #   actual   -> parity_check_sshpw.stdout               (the "Read ... SSH PasswordAuthentication" task above)
+          #   expected -> parity_check_expected_ssh_password_auth (defaults/main.yml)
+          - parity_check_sshpw.stdout == parity_check_expected_ssh_password_auth
+
+          # ======== BUCKET B — RE-STAMP: must DIFFER from golden =====
+          # These identity items MUST have been changed after cloning.
+
+          # machine-id must NOT still be golden's (it was regenerated post-clone).
+          #   actual -> ansible_machine_id             (gathered fact)
+          #   golden -> parity_check_golden_machine_id  (defaults/main.yml)
+          - ansible_machine_id != parity_check_golden_machine_id
+
+          # hostname must NOT still be "golden-image".
+          #   actual -> ansible_hostname             (gathered fact)
+          #   golden -> parity_check_golden_hostname  (defaults/main.yml)
+          - ansible_hostname != parity_check_golden_hostname
+        fail_msg: "Parity DRIFT detected — see {{ parity_check_report_path }} on the host"
+        success_msg: "All parity checks passed"
+      when: parity_check_fail_on_drift | bool   # only enforce in GATE mode (defaults/main.yml)

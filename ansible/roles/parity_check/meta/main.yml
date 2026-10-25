@@ -1,0 +1,21 @@
+---
+# meta/main.yml — the role's "identity card": its name, author, and what OSes it supports.
+
+galaxy_info:
+  namespace: meridian                 # full role name becomes "meridian.parity_check"
+  role_name: parity_check             # the role's own name
+  author: Abiola Osota                 # who wrote it
+  description: Audit a host against the golden-image known-good baseline (read-only parity check).
+  company: Meridian Retail (lab)       # the (fictional) company
+  license: MIT                         # the licence
+  min_ansible_version: "2.14"          # oldest Ansible this role expects (fleet + CI)
+  platforms:                           # which operating systems this role supports
+    - name: EL                         # EL = Enterprise Linux (RHEL / Rocky / Alma)
+      versions:
+        - "9"                          # version 9 ONLY — RHEL-only (SELinux, firewalld, golden baseline)
+  galaxy_tags:                         # labels describing the role
+    - audit
+    - compliance
+    - parity
+
+dependencies: []                       # this role needs no other roles to run first

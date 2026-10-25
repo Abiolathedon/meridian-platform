@@ -1,0 +1,21 @@
+{# templates/parity-report.j2 — the parity audit report written to each host. #}
+{# It reads the gathered facts + the two registered command results from       #}
+{# tasks/main.yml, compares them to the golden values in defaults/main.yml,     #}
+{# and prints PASS or DRIFT for each check. (No timestamp, so re-runs that find #}
+{# the same state produce the same file = idempotent.)                          #}
+========================================================
+ PARITY CHECK REPORT — {{ inventory_hostname }}
+ audited against the golden-image known-good values
+========================================================
+
+BUCKET A — INHERITANCE (must MATCH golden)
+--------------------------------------------------------
+[{{ 'PASS' if (ansible_selinux.config_mode | lower) == (parity_check_expected_selinux | lower) else 'DRIFT' }}]  SELinux mode       expected={{ parity_check_expected_selinux }}  actual={{ ansible_selinux.config_mode }}
+[{{ 'PASS' if parity_check_firewalld.stdout == parity_check_expected_firewalld_state else 'DRIFT' }}]  firewalld state    expected={{ parity_check_expected_firewalld_state }}  actual={{ parity_check_firewalld.stdout }}
+[{{ 'PASS' if parity_check_sshpw.stdout == parity_check_expected_ssh_password_auth else 'DRIFT' }}]  SSH password auth  expected={{ parity_check_expected_ssh_password_auth }}  actual={{ parity_check_sshpw.stdout }}
+
+BUCKET B — RE-STAMP (must DIFFER from golden)
+--------------------------------------------------------
+[{{ 'PASS' if ansible_machine_id != parity_check_golden_machine_id else 'DRIFT' }}]  machine-id  {{ 're-stamped (differs from golden)' if ansible_machine_id != parity_check_golden_machine_id else 'STILL GOLDEN!' }}  actual={{ ansible_machine_id }}
+[{{ 'PASS' if ansible_hostname != parity_check_golden_hostname else 'DRIFT' }}]  hostname    {{ 're-stamped (differs from golden)' if ansible_hostname != parity_check_golden_hostname else 'STILL golden-image!' }}  actual={{ ansible_hostname }}
+========================================================
