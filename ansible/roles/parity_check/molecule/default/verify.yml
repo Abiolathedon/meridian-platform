@@ -1,0 +1,21 @@
+---
+# verify.yml — the check after the role. In a container the audit block is
+# skipped (not a golden clone), so we can't verify real results — those come
+# from the dev-host run. We confirm the role's defaults load and are sane.
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+
+    - name: Load the role's default variables from its defaults file
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../../defaults/main.yml"
+
+    - name: Confirm the parity_check defaults are what we expect
+      ansible.builtin.assert:
+        that:
+          - parity_check_expected_selinux == "Enforcing"
+          - parity_check_golden_hostname == "golden-image"
+        fail_msg: "parity_check defaults are wrong or missing"
+        success_msg: "parity_check defaults resolved correctly (smoke test passed)"

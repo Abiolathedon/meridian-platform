@@ -1,0 +1,12 @@
+---
+# parity-check.yml — run the read-only parity audit against hosts.
+# SEPARATE, on-demand playbook (NOT in environment.yml) because an audit is
+# something you RUN to check a host, not part of configuring it.
+#   ansible-playbook playbooks/parity-check.yml --limit <host>
+# Audit mode by default (reports drift, never fails). To GATE (fail on drift):
+#   ansible-playbook playbooks/parity-check.yml --limit <host> -e parity_check_fail_on_drift=true
+
+- name: Parity check
+  hosts: app:db:k8s            # all app/db/k8s hosts in the chosen inventory
+  roles:
+    - parity_check             # the read-only audit role (handles its own become)

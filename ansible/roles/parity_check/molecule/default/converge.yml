@@ -1,0 +1,8 @@
+---
+# converge.yml — the play Molecule runs to APPLY the parity_check role.
+
+- name: Converge              # Molecule expects a play named "Converge"
+  hosts: all                  # the test box (rocky9)
+  become: true                # run as root
+  roles:
+    - role: parity_check      # apply OUR parity_check role

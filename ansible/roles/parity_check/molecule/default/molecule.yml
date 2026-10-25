@@ -1,0 +1,24 @@
+---
+# molecule.yml — WHERE and HOW to test parity_check: one throwaway Rocky 9
+# container (parity_check is RHEL-only), run the role, check it, bin it.
+
+driver:
+  name: podman                      # use a Podman container as the test box
+
+platforms:
+  - name: rocky9                    # RHEL-family only
+    image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
+    pre_build_image: true
+    command: /usr/sbin/init         # boot systemd, like a real server
+    systemd: always
+
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        # A container isn't a golden-image clone, so the checks would all read
+        # as drift. Flip the role's switch OFF (true in defaults/main.yml) so
+        # the audit block skips and we just prove the role loads/parses. The
+        # real audit runs on a real host.
+        parity_check_apply: false

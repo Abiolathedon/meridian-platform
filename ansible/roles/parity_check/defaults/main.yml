@@ -1,0 +1,32 @@
+---
+# defaults/main.yml — parity_check SETTINGS: the golden-image "known-good"
+# values this role audits each host against. Source of truth = the golden
+# baseline we captured. Consumed by tasks/main.yml (the checks) and
+# templates/parity-report.j2 (the report).
+
+# ---- BUCKET A: INHERITANCE — the host must MATCH golden -------------
+
+parity_check_expected_selinux: "Enforcing"         # SELinux mode on golden
+parity_check_expected_firewalld_state: "active"    # systemctl is-active returns "active" for a running service
+parity_check_expected_ssh_password_auth: "no"      # SSH refuses password logins (global)
+
+# ---- BUCKET B: RE-STAMP — the host must DIFFER from golden ----------
+# (these identity items MUST have been changed after cloning)
+
+parity_check_golden_machine_id: "22079c9599e34efe9689457600606413"  # golden's id; a clone must differ
+parity_check_golden_hostname: "golden-image"                         # golden's name; a clone must differ
+
+# ---- SWITCHES ------------------------------------------------------
+
+# false = AUDIT mode (report drift, keep going). true = GATE mode (fail on any drift).
+# USED BY: tasks/main.yml (the final assert).
+parity_check_fail_on_drift: false
+
+# true (real hosts) = run the audit. Molecule sets this false so the
+# checks skip in a container (which isn't a golden clone).
+# USED BY: tasks/main.yml (the `when:` guard on the audit block).
+parity_check_apply: true
+
+# where to write the report on the audited host.
+# USED BY: tasks/main.yml (the template task) + templates/parity-report.j2.
+parity_check_report_path: "/var/log/parity-check-report.txt"
