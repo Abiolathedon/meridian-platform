@@ -1,0 +1,23 @@
+---
+# verify.yml — the check after the role. In a container the ad_join block
+# is skipped (no real AD), so we can't verify a real join here — that's
+# proven on the dev VM. We confirm the role's defaults load and are sane.
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+
+    - name: Load the role's default variables from its defaults file
+      # [MODULE] include_vars -> read the role's defaults/main.yml into this
+      #          play so we can check it. Path is relative to this verify.yml.
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../../defaults/main.yml"
+
+    - name: Confirm the ad_join defaults are what we expect
+      ansible.builtin.assert:    # passes if all conditions true, else fails
+        that:
+          - ad_join_domain == "exodus.local"
+          - ad_join_access_group == "sg-linux-access@exodus.local"
+        fail_msg: "ad_join defaults are wrong or missing"
+        success_msg: "ad_join defaults resolved correctly (smoke test passed)"

@@ -1,0 +1,45 @@
+---
+# defaults/main.yml — the ad_join role's SETTINGS ("knobs").
+# Lowest-priority variables; any host/group can override them without
+# editing the role. Everything here is consumed in tasks/main.yml
+# (and the SSH drop-in files that tasks writes).
+
+# -- The AD domain to join (lowercase DNS form).
+#    USED BY: tasks/main.yml -> realm discover / realm join / realm permit.
+#    (Confirmed live earlier with `realm list`.)
+ad_join_domain: "exodus.local"
+
+# -- The AD security group whose members may log in to Linux.
+#    USED BY: tasks/main.yml -> `realm permit` (the AD door) AND the two
+#             SSH drop-in files below (the SSH door + password rule).
+ad_join_access_group: "sg-linux-access@exodus.local"
+
+# -- The AD account that performs the join (must be allowed to join computers).
+#    USED BY: tasks/main.yml -> the `realm join` task.
+#    PASSWORD is deliberately NOT here (it is a secret) — supplied at run
+#    time via Vault or a prompt. Never hard-code it in the repo.
+ad_join_admin_user: "Administrator"
+
+# -- The AD client packages to install (step 1 of the role).
+#    USED BY: tasks/main.yml -> the package-install task (loops this list).
+ad_join_packages:
+  - realmd               # provides the `realm` command
+  - sssd                 # service that talks to AD for logins/identity
+  - adcli                # low-level tool realmd uses to perform the join
+  - samba-common-tools   # AD helper tools realmd needs underneath
+  - oddjob               # background helper service
+  - oddjob-mkhomedir     # auto-creates an AD user's home dir on first login
+  - krb5-workstation     # Kerberos client tools
+
+# -- The SSH groups allowed to log in (replaces the old AllowUsers list).
+#    USED BY: tasks/main.yml -> writes /etc/ssh/sshd_config.d/60-allowusers.conf
+#      wheel                      -> local admins (e.g. exodus-admin)
+#      {{ ad_join_access_group }} -> AD users in the Linux-access group
+#      svc-ansible                -> the automation account's own group
+ad_join_ssh_allow_groups: "wheel {{ ad_join_access_group }} svc-ansible"
+
+# -- Safety switch. True (default, real hosts) = do the real AD/SSH work.
+#    Molecule flips this to FALSE (in molecule.yml) because a container
+#    can't join real AD — so the role runs clean without trying.
+#    USED BY: tasks/main.yml -> the `when:` guard on the AD/SSH tasks.
+ad_join_apply: true

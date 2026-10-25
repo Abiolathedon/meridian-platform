@@ -1,0 +1,8 @@
+---
+# converge.yml — the play Molecule runs to APPLY the ad_join role.
+
+- name: Converge              # Molecule expects a play named "Converge"
+  hosts: all                  # the test box (rocky9)
+  become: true                # run as root
+  roles:
+    - role: ad_join           # apply OUR ad_join role
