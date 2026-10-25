@@ -5,8 +5,21 @@
 
 - name: Environment
   hosts: app:db:k8s            # all app/db/k8s hosts in the chosen inventory
-  become: true                 # run as ROOT — roles install packages, create users, write sudo files
+  become: true                 # run as ROOT — roles install packages, write sudo/SSH files
+
+  # vars_prompt — ask for values when the playbook STARTS, before any task runs.
+  # Used to get the AD Administrator password for the ad_join role's join step.
+  # private: true hides what you type; the value is NEVER stored in the repo.
+  # It becomes the variable ad_join_admin_password, consumed by
+  # roles/ad_join/tasks/main.yml (the join task, via stdin).
+  # (Temporary — when we introduce Vault later, this prompt goes away.)
+  vars_prompt:
+    - name: ad_join_admin_password
+      prompt: "AD Administrator password — TYPE it to join a NEW host; press Enter only if already joined"
+      private: true
+
   roles:
     - baseline                 # base OS config (packages, time)
-    - users                    # create service/admin accounts (svc-ansible: key + sudo)
-    - dns_resolver             # enforce the correct DNS resolver (AD DNS, 192.168.0.157)
+    - users                    # service/admin accounts (svc-ansible: key + sudo)
+    - dns_resolver             # correct DNS resolver (AD DNS, 192.168.0.157)
+    - ad_join                  # join AD + AD-based SSH access (uses the prompt above)

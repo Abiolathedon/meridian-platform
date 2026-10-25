@@ -1,0 +1,11 @@
+---
+# handlers/main.yml — runs ONLY when a task notifies it, once, at the end
+# of the play. Notified by tasks/main.yml tasks 5 and 6 (the two SSH
+# drop-in files) when they change, via `notify: Reload sshd`.
+
+- name: Reload sshd
+  # [MODULE] ansible.builtin.systemd -> manage a systemd service (ansible-core 2.14).
+  ansible.builtin.systemd:
+    name: sshd                 # the SSH service on RHEL is "sshd"
+    state: reloaded            # reload config (NOT restart) — keeps live sessions up
+  become: true                 # reloading a service needs root

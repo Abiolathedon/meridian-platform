@@ -1,0 +1,24 @@
+---
+# molecule.yml — WHERE and HOW to test ad_join: one throwaway Rocky 9
+# container (this role is RHEL-only), run the role, check it, bin it.
+
+driver:
+  name: podman                      # use a Podman container as the test box
+
+platforms:
+  - name: rocky9                    # RHEL-family only (ad_join uses dnf + realm)
+    image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
+    pre_build_image: true
+    command: /usr/sbin/init         # boot systemd, like a real server
+    systemd: always
+
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        # A container can't join real AD, so flip the role's safety switch
+        # OFF (set in defaults/main.yml as true). The whole ad_join block
+        # skips, the role runs clean, and we prove structure/syntax. The
+        # real AD join is proven on the dev VM via the snapshot test.
+        ad_join_apply: false

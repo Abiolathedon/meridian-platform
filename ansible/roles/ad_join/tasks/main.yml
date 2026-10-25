@@ -1,0 +1,93 @@
+---
+# tasks/main.yml — what the ad_join role DOES, in order.
+# Every real action sits inside ONE block gated by ad_join_apply
+# (defaults/main.yml), so Molecule can run the role in a container
+# (where it sets ad_join_apply=false) without touching real AD.
+
+- name: Join Active Directory and wire up AD-based SSH access
+  # [KEYWORD] when -> run this whole block ONLY when the safety switch is on.
+  #           ad_join_apply comes from defaults/main.yml (true on real hosts);
+  #           molecule/default/molecule.yml sets it false to skip all of this.
+  when: ad_join_apply | bool
+  # [KEYWORD] become -> run every task below as root (AD + SSH need root).
+  become: true
+  # [KEYWORD] block -> groups tasks so the one `when:` above covers them all.
+  block:
+
+    # -- 1. Install the AD client packages -------------------------------
+    - name: Install the Active Directory client packages
+      # [MODULE] ansible.builtin.dnf -> install RPM packages (RHEL family).
+      ansible.builtin.dnf:
+        # [PARAM] name -> the list from defaults/main.yml (ad_join_packages).
+        name: "{{ ad_join_packages }}"
+        state: present          # ensure installed; no-op if already there
+
+    # -- 2. Find out if we're already joined ----------------------------
+    - name: Check current realm membership and login policy
+      # [MODULE] ansible.builtin.command -> run `realm list` (no AD module exists).
+      ansible.builtin.command: realm list
+      # [KEYWORD] register -> save the output into ad_join_realm_list so the
+      #           next two tasks can decide whether work is needed.
+      register: ad_join_realm_list
+      changed_when: false       # listing changes nothing
+      check_mode: false          # read-only; run even in a --check dry-run so the guards have data
+
+    # -- 3. Join the domain (only if not already joined) ----------------
+    - name: Join this host to the Active Directory domain
+      ansible.builtin.command: realm join {{ ad_join_domain }} -U {{ ad_join_admin_user }}
+      args:
+        # [PARAM] stdin -> feed the password to realm join's prompt.
+        #         ad_join_admin_password is NOT in the repo — the playbook
+        #         supplies it at run time (a prompt). See the run playbook.
+        stdin: "{{ ad_join_admin_password }}"
+      # [KEYWORD] when -> only join if our domain is NOT already in the
+      #           Step-2 output. This is what makes the join idempotent.
+      when: ad_join_domain not in ad_join_realm_list.stdout
+      no_log: true              # hide the password from Ansible output/logs
+      changed_when: true        # a successful join IS a change; only runs when not joined
+
+    # -- 4. Permit only the Linux-access AD group to log in -------------
+    - name: Permit only the Linux-access AD group
+      ansible.builtin.command: realm permit -g {{ ad_join_access_group }}
+      # [KEYWORD] when -> only run if that group isn't already permitted
+      #           (checked against the Step-2 output). Keeps it idempotent.
+      when: ad_join_access_group not in ad_join_realm_list.stdout
+      changed_when: true        # if it runs at all, it made a change
+
+    # -- 5. SSH door: allow login by GROUP (replaces AllowUsers) --------
+    - name: Configure SSH to allow login by group
+      # [MODULE] ansible.builtin.copy -> write a file with this exact content.
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/60-allowusers.conf
+        content: |
+          # Managed by the ad_join role. SSH access is by GROUP:
+          #   wheel                        -> local admins (exodus-admin)
+          #   sg-linux-access@exodus.local -> AD users allowed on Linux
+          #   svc-ansible                  -> the Ansible automation account
+          AllowGroups {{ ad_join_ssh_allow_groups }}
+        owner: root
+        group: root
+        mode: "0644"
+      # [KEYWORD] notify -> if this file CHANGED, trigger the "Reload sshd"
+      #           handler (handlers/main.yml) at the end of the play.
+      notify: Reload sshd
+
+    # -- 6. SSH door: allow PASSWORD login for the AD group only --------
+    - name: Allow password login for the AD group only
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/70-ad-password-auth.conf
+        content: |
+          # Managed by the ad_join role. AD users have no local SSH key,
+          # so allow PASSWORD login — but only for the Linux-access group.
+          # Local accounts stay key-only.
+          Match Group {{ ad_join_access_group }}
+              PasswordAuthentication yes
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload sshd
+
+    # -- 7. Safety: validate the whole SSH config before any reload ----
+    - name: Validate the SSH configuration
+      ansible.builtin.command: sshd -t
+      changed_when: false       # a test, not a change

@@ -1,0 +1,21 @@
+---
+# meta/main.yml — the role's "identity card": its name, author, and what OSes it supports.
+
+galaxy_info:
+  namespace: meridian                 # full role name becomes "meridian.ad_join"
+  role_name: ad_join                  # the role's own name
+  author: Abiola Osota                 # who wrote it
+  description: Join a RHEL host to Active Directory and configure AD-based SSH access.
+  company: Meridian Retail (lab)       # the (fictional) company
+  license: MIT                         # the licence
+  min_ansible_version: "2.14"          # oldest Ansible this role expects (fleet + CI)
+  platforms:                           # which operating systems this role supports
+    - name: EL                         # EL = Enterprise Linux (RHEL / Rocky / Alma)
+      versions:
+        - "9"                          # version 9 ONLY — this role is RHEL-only
+  galaxy_tags:                         # labels describing the role
+    - activedirectory
+    - sssd
+    - realmd
+
+dependencies: []                       # this role needs no other roles to run first
