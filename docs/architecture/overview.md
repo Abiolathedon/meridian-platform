@@ -2,7 +2,7 @@
 
 The Meridian Retail estate (EXODUS lab fleet) as designed under MER-005. This page is the map; the reasons live in `decisions/` (one ADR per decision); the change plan lives in `../change-records/`; the history in `../PROJECT-JOURNAL.md`.
 
-**Status:** design complete (D0–D9 agreed, MER-005). Build begins with E0/E1 on `exodus-dev-app-01`.
+**Status:** design complete (D0–D9 agreed, MER-005); build underway. E0 foundation (MER-006) and E1 core role library (MER-007) are live on `exodus-dev-app-01`. The built roles and roadmap are catalogued in [role-library.md](../role-library.md).
 
 ## Two layers
 
@@ -91,6 +91,8 @@ Central identity, per-environment RBAC, least privilege. Full reasoning in [ADR-
 | Privilege | `sudo` via per-group drop-ins in `/etc/sudoers.d/`, no blanket `wheel` |
 | Break-glass | one sealed local account per host; escrowed, logged, alerted |
 
+Built in E1 via the `ad_join` role (realmd/SSSD join + `AllowGroups`/`Match Group` SSH), on a flat `sg-linux-access` group for now; per-environment groups follow at fleet onboarding. Implementation and credential handling in [ADR-0009](decisions/ADR-0009-ad-integrated-linux-access.md) and [ADR-0010](decisions/ADR-0010-join-credential-handling.md).
+
 ## Automation & role library (D5)
 
 One role library, per-environment inventories, build-once-run-many; secrets in Ansible Vault. Full reasoning in [ADR-0005](decisions/ADR-0005-repository-and-role-structure.md); the code lives in `../../ansible/` once built.
@@ -121,6 +123,9 @@ Reuse + codify in place, build new from code, in ordered reversible slices (E0�
 - [ADR-0006 — Jenkins and Kubernetes](decisions/ADR-0006-jenkins-and-kubernetes.md)
 - [ADR-0007 — Monitoring](decisions/ADR-0007-monitoring.md)
 - [ADR-0008 — Power and run plan](decisions/ADR-0008-power-and-run-plan.md)
+- [ADR-0009 — AD-integrated Linux access](decisions/ADR-0009-ad-integrated-linux-access.md)
+- [ADR-0010 — Join-credential handling](decisions/ADR-0010-join-credential-handling.md)
+- [ADR-0011 — Clone lifecycle](decisions/ADR-0011-clone-lifecycle.md)
 
 ## Change records
 
