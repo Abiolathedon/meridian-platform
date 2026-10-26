@@ -3,15 +3,25 @@
 The running record of this project: what was done, when, why, where we are, and what is next.
 Newest entry first. A ticket is not Done until its entry is here. Read **Current state** first.
 
-## Current state (updated 2026-10-15)
+## Current state (updated 2026-10-25)
 
 - **Phase:** C — Build the estate as code · **Sprint 0 — Foundation** — design complete; building underway
-- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9) · MER-006 E0 foundation (Ansible scaffold + baseline role)
+- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9) · MER-006 E0 foundation (Ansible scaffold + baseline role) · MER-007 E1 dev-host onboarding + core role library (baseline molecule, users, dns_resolver, ad_join, parity_check)
 - **In progress:** —
-- **Fleet:** 12 VMs on VMware Workstation, 192.168.0.0/24, static block .150–.200; see `architecture/overview.md`
+- **Fleet:** 12 VMs on VMware Workstation, 192.168.0.0/24, static block .150–.200; see `architecture/overview.md`. Codified so far: `exodus-dev-app-01` (baseline, users, dns_resolver, ad_join — AD-joined, auditing clean).
+- **Role library:** baseline · users · dns_resolver · ad_join · parity_check (built); clone_init (designed). Catalogue in `role-library.md`.
 - **Working rules:** record-first — the record is context, not a cage: study the old project, keep what is good, rebuild what was weak properly; one ADR per decision; every change via ticket → branch → PR → CI → review → squash merge
 - **Prior project:** `exodus-change-management` (its own CR-001–CR-013, ADR series) and the masterfile `EXODUS_AUTHORITATIVE_MASTER_ARCHIVE.yaml` — read-only history, referenced not copied
-- **Next:** E1 — run full Molecule test on `baseline`, then apply it to `exodus-dev-app-01` (dev-first), manual-first
+- **Next:** E2 — apply the five roles across the rest of the fleet (clone_init on fresh clones → parity_check → join); build `clone_init`; raise the Ansible Vault ticket (unattended joins)
+
+## 2026-10-25 — MER-007 E1 dev-host onboarding + core role library — DONE
+
+- **What:** brought `exodus-dev-app-01` under Ansible and built the first working role library on it. Passed full `molecule test` on `baseline` (Rocky 9 + Ubuntu 24.04). Built and merged four roles — each manual-first → role → Molecule smoke → lint → functional test on the dev host: `users` (svc-ansible account + SSH key + scoped sudo), `dns_resolver` (NetworkManager DNS → `exodus-ad-01`), `ad_join` (realmd/SSSD join to `exodus.local` + AD-based SSH via `AllowGroups` and `Match Group`), `parity_check` (read-only golden-image audit). Added `docs/role-library.md` — the role catalogue and roadmap.
+- **Why:** E1 is the first build slice — prove the estate-as-code on one real host, dev-first, before onboarding the fleet.
+- **Verified:** `ad_join` proven by `realm leave` → fresh join (`changed`) → re-run (`changed=0`) → real AD user `exodus-user@exodus.local` SSH login on the host; `parity_check` audit all-PASS on the dev host; every role green on Molecule + `ansible-lint`; all PRs merged under branch protection.
+- **Decisions:** ADR-0009 (AD-integrated Linux access), ADR-0010 (join-credential handling — prompt now, Vault later), ADR-0011 (clone lifecycle — `clone_init` + `parity_check`).
+- **Deferred:** `clone_init` role (designed, not built); per-environment AD groups (flat `sg-linux-access` used for now — ADR-0009); Ansible Vault (own ticket); applying the five roles to the rest of the fleet.
+- **Refs:** issue #14 · PRs #15 `aa11bcc` (baseline molecule), #16 `1fedc30` (users), #17 `058dbc9` (dns_resolver), #18 `a9fd31c` (ad_join), #19 `12ac8b1` (parity_check)
 
 ## 2026-10-14 — MER-006 E0 foundation: Ansible scaffold + baseline role — DONE
 
