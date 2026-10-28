@@ -18,7 +18,7 @@
 # connect there, run clone_init (hostname / machine-id / host keys / static IP),
 # which then reboots the host onto its NEW IP. The connection drops — expected.
 - name: "Onboard clone — Play 1: re-stamp identity (on golden's .150)"
-  hosts: "{{ onboard_host }}"           # the clone, chosen at runtime with -e onboard_host=...
+  hosts: "{{ onboard_host | default('onboard_clone') }}"   # pass -e onboard_host=<host>; default is a non-matching placeholder (safe for lint/accidental runs)
   become: true
   gather_facts: true
   vars:
@@ -35,7 +35,7 @@
 # brand-new SSH host keys. We wait for it to come back, then run the normal
 # configuration roles. We stay connected as exodus-admin throughout.
 - name: "Onboard clone — Play 2: configure on the new IP"
-  hosts: "{{ onboard_host }}"           # same host, now at its real inventory IP
+  hosts: "{{ onboard_host | default('onboard_clone') }}"   # same host (set by -e onboard_host); default is a non-matching placeholder
   become: true
   gather_facts: false                   # don't gather yet — it's still rebooting
   vars:
