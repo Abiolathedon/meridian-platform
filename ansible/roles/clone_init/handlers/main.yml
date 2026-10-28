@@ -1,0 +1,4 @@
+---
+# handlers/main.yml — clone_init has NO handlers.
+# The reboot is fired inline as a normal task (step 7 of tasks/main.yml),
+# not via 'notify', because it must run whenever the identity changes.

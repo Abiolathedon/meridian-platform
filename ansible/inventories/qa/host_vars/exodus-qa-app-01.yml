@@ -1,0 +1,6 @@
+---
+# host_vars for exodus-qa-app-01 — the identity clone_init stamps onto this
+# fresh clone during onboarding. Read by the clone_init role in Play 1.
+
+clone_init_target_hostname: "exodus-qa-app-01"   # the new hostname to set
+clone_init_target_ip: "192.168.0.180"            # the new static IP to set

@@ -1,0 +1,22 @@
+---
+# verify.yml — the check after the role. In a container the re-stamp block is
+# skipped (apply is false), so there's nothing on the host to verify — those
+# results come from the real-clone run. We confirm the role's defaults load
+# and hold the expected golden-reference values.
+
+- name: Verify
+  hosts: all
+  gather_facts: false
+  tasks:
+
+    - name: Load the role's default variables from its defaults file
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../../defaults/main.yml"
+
+    - name: Confirm the clone_init defaults are what we expect
+      ansible.builtin.assert:
+        that:
+          - clone_init_golden_ip == "192.168.0.150"
+          - clone_init_golden_machine_id == "22079c9599e34efe9689457600606413"
+        fail_msg: "clone_init defaults are wrong or missing"
+        success_msg: "clone_init defaults resolved correctly (smoke test passed)"

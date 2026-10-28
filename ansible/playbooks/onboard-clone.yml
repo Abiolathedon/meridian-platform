@@ -1,0 +1,62 @@
+---
+# playbooks/onboard-clone.yml
+# Onboard a fresh golden-image clone end to end, in two plays.
+#
+# HOW TO RUN (from the ansible/ dir):
+#   ansible-playbook -i inventories/qa playbooks/onboard-clone.yml -e onboard_host=exodus-qa-app-01
+#
+# PRECONDITIONS (important):
+#   - the golden image is POWERED OFF
+#   - ONLY this one fresh clone is running  (both avoid colliding on .150)
+#   - the clone's inventory entry gives its REAL target IP (e.g. .180)
+#   - the exodus key is loaded in ssh-agent  (ssh-add ~/.ssh/id_ed25519_exodus)
+
+# =====================================================================
+# PLAY 1 — Re-stamp the clone's identity (connect on golden's .150)
+# =====================================================================
+# The clone boots inheriting golden's network, so it comes up on .150. We
+# connect there, run clone_init (hostname / machine-id / host keys / static IP),
+# which then reboots the host onto its NEW IP. The connection drops — expected.
+- name: "Onboard clone — Play 1: re-stamp identity (on golden's .150)"
+  hosts: "{{ onboard_host }}"           # the clone, chosen at runtime with -e onboard_host=...
+  become: true
+  gather_facts: true
+  vars:
+    ansible_host: "192.168.0.150"       # override inventory IP: connect on golden's .150 for THIS play
+    ansible_ssh_private_key_file: "/home/exodus-admin/.ssh/id_ed25519_exodus"   # golden's inherited key (automation key isn't on the clone yet)
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"   # accept the key on first contact
+  roles:
+    - clone_init                        # re-stamp the four identity items, then reboot (async)
+
+# =====================================================================
+# PLAY 2 — Configure the host on its NEW IP
+# =====================================================================
+# After the reboot the host is on its real IP (from inventory, e.g. .180) with
+# brand-new SSH host keys. We wait for it to come back, then run the normal
+# configuration roles. We stay connected as exodus-admin throughout.
+- name: "Onboard clone — Play 2: configure on the new IP"
+  hosts: "{{ onboard_host }}"           # same host, now at its real inventory IP
+  become: true
+  gather_facts: false                   # don't gather yet — it's still rebooting
+  vars:
+    ansible_ssh_private_key_file: "/home/exodus-admin/.ssh/id_ed25519_exodus"   # golden's inherited key (automation key isn't on the clone yet)
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=accept-new"   # new host keys -> accept on first contact
+  vars_prompt:
+    - name: ad_join_admin_password      # ad_join needs this; typed at runtime, never stored
+      prompt: "AD Administrator password — TYPE it to join this NEW host"
+      private: true
+  pre_tasks:
+    - name: Wait for the clone to reboot and come up on its new IP
+      ansible.builtin.wait_for_connection:
+        delay: 15                       # give it time to actually go down first
+        timeout: 300                    # then wait up to 5 minutes for it to return
+    - name: Gather facts now that we're reconnected
+      ansible.builtin.setup:
+  roles:
+    - baseline                          # common packages, time, timezone
+    - users                             # service/admin accounts (incl. svc-ansible)
+    - dns_resolver                      # point DNS at the AD server (.157)
+    - ad_join                           # join Active Directory + AD-based SSH
+    - role: parity_check                # final audit — as a GATE:
+      vars:
+        parity_check_fail_on_drift: true   # fail onboarding if the clone isn't correctly stamped
