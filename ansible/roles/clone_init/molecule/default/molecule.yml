@@ -1,0 +1,24 @@
+---
+# molecule.yml — WHERE and HOW to test clone_init: one throwaway Rocky 9
+# container (clone_init is RHEL-only), run the role, check it, bin it.
+
+driver:
+  name: podman                      # use a Podman container as the test box
+
+platforms:
+  - name: rocky9                    # RHEL-family only
+    image: docker.io/geerlingguy/docker-rockylinux9-ansible:latest
+    pre_build_image: true
+    command: /usr/sbin/init         # boot systemd, like a real server
+    systemd: always
+
+provisioner:
+  name: ansible
+  inventory:
+    group_vars:
+      all:
+        # A container can't be renamed, re-keyed, re-IP'd or rebooted — and it
+        # isn't a real clone. Flip the role's switch OFF (it's true in defaults)
+        # so the whole re-stamp block skips and we just prove the role parses
+        # and loads. The real re-stamp runs on an actual fresh clone.
+        clone_init_apply: false

@@ -1,0 +1,4 @@
+---
+# vars/main.yml — clone_init has NO internal constants.
+# Every setting lives in defaults/main.yml so it can be overridden per clone
+# in inventory host_vars. This file is intentionally empty.

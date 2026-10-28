@@ -1,0 +1,21 @@
+---
+# meta/main.yml — the role's "identity card": its name, author, and what OSes it supports.
+
+galaxy_info:
+  namespace: meridian                 # full role name becomes "meridian.clone_init"
+  role_name: clone_init               # the role's own name
+  author: Abiola Osota                 # who wrote it
+  description: Re-stamp a fresh golden-image clone's identity (hostname, machine-id, SSH host keys, static IP) so it can be safely onboarded.
+  company: Meridian Retail (lab)       # the (fictional) company
+  license: MIT                         # the licence
+  min_ansible_version: "2.14"          # oldest Ansible this role expects (fleet + CI)
+  platforms:                           # which operating systems this role supports
+    - name: EL                         # EL = Enterprise Linux (RHEL / Rocky / Alma)
+      versions:
+        - "9"                          # version 9 ONLY — RHEL-only (same baseline as the golden image)
+  galaxy_tags:                         # labels describing the role
+    - provisioning
+    - onboarding
+    - identity
+
+dependencies: []                       # this role needs no other roles to run first

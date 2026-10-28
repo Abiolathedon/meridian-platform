@@ -1,0 +1,130 @@
+---
+# =====================================================================
+# tasks/main.yml — clone_init: re-stamp a fresh clone's identity, then reboot.
+# Runs in Play 1 (connected to the clone on golden's .150 as exodus-admin).
+# Guarded by clone_init_apply so Molecule can skip it in a container.
+# =====================================================================
+
+- name: Re-stamp the clone identity
+  when: clone_init_apply | bool          # true = real clone; false (Molecule) = skip the whole block
+  become: true                           # all tasks below edit system files -> need root
+  block:                                 # one guard (when + become) covers every task inside
+
+    # ---- 1. SAFETY: never re-stamp to a blank identity ------------
+    - name: Fail early if the target hostname or IP is not set
+      ansible.builtin.assert:            # assert = stop the play if a condition is false
+        that:                            # ALL of these must be true to continue
+          - clone_init_target_hostname | length > 0   # hostname must not be empty
+          - clone_init_target_ip | length > 0         # IP must not be empty
+        fail_msg: >-                     # shown if a check fails
+          clone_init_target_hostname and clone_init_target_ip must be set
+          in the clone's inventory host_vars before onboarding.
+        success_msg: "Target identity provided — proceeding with re-stamp."   # shown if all pass
+
+    # ---- 2. HOSTNAME ----------------------------------------------
+    - name: Set the hostname
+      ansible.builtin.hostname:          # writes /etc/hostname + updates the running system
+        name: "{{ clone_init_target_hostname }}"   # the new unique name (from host_vars)
+
+    # ---- 3. MACHINE-ID --------------------------------------------
+    - name: Read the current machine-id
+      ansible.builtin.command: cat /etc/machine-id   # read this host's current fingerprint
+      register: clone_init_current_machine_id        # save it to compare against golden's
+      changed_when: false                            # reading never counts as a change
+      check_mode: false                              # run even under --check so we have data
+
+    - name: Regenerate the machine-id (only if it still matches golden)
+      when: clone_init_current_machine_id.stdout == clone_init_golden_machine_id   # i.e. still a fresh clone
+      block:                             # group the tasks below under that one condition
+
+        - name: Remove the inherited machine-id files
+          ansible.builtin.file:
+            path: "{{ item }}"           # delete each path in the loop
+            state: absent                # absent = make sure the file is gone
+          loop:
+            - /etc/machine-id            # the main fingerprint file
+            - /var/lib/dbus/machine-id   # dbus's copy of it (may not exist on all images)
+
+        - name: Generate a fresh machine-id
+          ansible.builtin.command: systemd-machine-id-setup   # make a brand-new unique id
+          changed_when: true             # always writes a new id -> report a change
+
+        # Some RHEL images have no /var/lib/dbus/machine-id — dbus just reads
+        # /etc/machine-id directly. Only make the symlink if that folder exists,
+        # so we don't fail on images (like this golden) that don't use it.
+        - name: Check whether the dbus machine-id folder exists
+          ansible.builtin.stat:
+            path: /var/lib/dbus          # the folder dbus would keep its own copy in
+          register: clone_init_dbus_dir  # .stat.exists tells us if it's there
+
+        - name: Keep dbus's machine-id in sync with /etc/machine-id
+          ansible.builtin.file:
+            src: /etc/machine-id                 # the real fingerprint file
+            dest: /var/lib/dbus/machine-id       # dbus's copy points at it...
+            state: link                          # ...as a symlink (so they can't drift apart)
+            force: true                          # replace whatever is there now
+          when: clone_init_dbus_dir.stat.exists  # skip entirely if this image doesn't use it
+
+    # ---- 4. SSH HOST KEYS -----------------------------------------
+    - name: Check whether host keys have already been regenerated
+      ansible.builtin.stat:              # stat = inspect a path (changes nothing)
+        path: /etc/ssh/.clone_init_rekeyed       # our marker file
+      register: clone_init_rekey_marker          # holds .stat.exists (true/false)
+
+    - name: Regenerate the SSH host keys (first run only)
+      when: not clone_init_rekey_marker.stat.exists   # skip entirely once the marker exists
+      block:                             # group the re-key tasks under that condition
+
+        - name: Find the inherited host-key files
+          ansible.builtin.find:          # find = list files (file module can't use a * wildcard)
+            paths: /etc/ssh              # directory to search
+            patterns: "ssh_host_*"       # match every host-key file (public + private)
+          register: clone_init_old_hostkeys        # .files = the list to delete below
+
+        - name: Remove the inherited host-key files
+          ansible.builtin.file:
+            path: "{{ item.path }}"      # each file record returned by find
+            state: absent                # delete it
+          loop: "{{ clone_init_old_hostkeys.files }}"   # loop over the found files
+          loop_control:
+            label: "{{ item.path }}"     # log just the path (not the whole record)
+
+        - name: Generate fresh host keys
+          ansible.builtin.command: ssh-keygen -A   # make new keys for all default types
+          changed_when: true             # always creates keys -> report a change
+
+        - name: Drop the marker so this never runs again
+          ansible.builtin.file:
+            path: /etc/ssh/.clone_init_rekeyed     # the marker we checked at the top
+            state: touch                 # touch = create an empty file
+            mode: "0600"                 # root read/write only
+
+    # ---- 5. STATIC IP ---------------------------------------------
+    # We write the profile only; we do NOT activate it (that would drop our
+    # .150 session). The reboot (step 7) brings the new IP up.
+    - name: Write this host's static IP into the connection profile
+      community.general.nmcli:           # manages NetworkManager connections
+        conn_name: "{{ clone_init_network_interface }}"   # the profile name (ens160)
+        type: ethernet                   # a wired connection
+        ip4: "{{ clone_init_target_ip }}/{{ clone_init_network_prefix }}"   # e.g. 192.168.0.180/24
+        gw4: "{{ clone_init_network_gateway }}"           # e.g. 192.168.0.1
+        dns4:
+          - "{{ clone_init_network_dns }}"                # e.g. 192.168.0.157 (AD DNS)
+        state: present                   # ensure the profile holds these settings
+
+    # ---- 6. CLEAR THE STALE GOLDEN IP FROM known_hosts ------------
+    - name: Remove the stale golden IP from the control node's known_hosts
+      ansible.builtin.known_hosts:       # manages entries in ~/.ssh/known_hosts
+        name: "{{ clone_init_golden_ip }}"   # 192.168.0.150
+        state: absent                    # delete this host's entry
+      delegate_to: localhost             # run on the CONTROL NODE, not the clone
+      become: false                      # edit the login user's known_hosts, not root's
+
+    # ---- 7. REBOOT ------------------------------------------------
+    # Host returns on its NEW IP, so the .150 session WILL drop — expected.
+    # We fire-and-forget; Play 2 reconnects on the new IP.
+    - name: Reboot to apply the new identity (connection WILL drop — expected)
+      ansible.builtin.shell: "sleep 2 && /sbin/shutdown -r now 'clone_init re-stamp'"   # sleep lets the task return first
+      async: 1                           # start it in the background...
+      poll: 0                            # ...and don't wait for it to finish
+      changed_when: true                 # a reboot is always a change

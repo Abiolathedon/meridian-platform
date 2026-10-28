@@ -1,0 +1,33 @@
+---
+# defaults/main.yml — clone_init SETTINGS: the identity a fresh golden-image
+# clone must be RE-STAMPED with during onboarding, plus network details and
+# the apply switch. Per-clone values (hostname, IP) are set in the inventory
+# host_vars; the rest are lab-wide and rarely change.
+# Consumed by tasks/main.yml.
+
+# ---- TARGET IDENTITY — set PER CLONE (in inventory host_vars) -------
+# No safe default: each clone gets its own. Leave blank here and override
+# in inventories/<env>/host_vars/<host>.yml before onboarding.
+
+clone_init_target_hostname: ""                 # e.g. exodus-qa-app-01  (the new name)
+clone_init_target_ip: ""                       # e.g. 192.168.0.180     (the new static IP)
+
+# ---- NETWORK — lab-wide, rarely change -----------------------------
+
+clone_init_network_interface: "ens160"         # NIC / nmcli connection name on the fleet
+clone_init_network_prefix: 24                  # /24 subnet (192.168.0.0/24)
+clone_init_network_gateway: "192.168.0.1"      # lab gateway
+clone_init_network_dns: "192.168.0.157"        # AD/DNS (dns_resolver re-asserts this later)
+
+# ---- GOLDEN — the stale identity to clear --------------------------
+
+clone_init_golden_ip: "192.168.0.150"          # IP a fresh clone boots on; cleared from the
+                                               # control node known_hosts so reconnect is clean
+clone_init_golden_machine_id: "22079c9599e34efe9689457600606413"   # golden's id; regenerate only if the clone still has this
+
+# ---- SWITCHES ------------------------------------------------------
+
+# true (real clone) = perform the re-stamp + reboot. Molecule sets this
+# false so the whole block skips in a container (not a real clone).
+# USED BY: tasks/main.yml (the `when:` guard on the re-stamp block).
+clone_init_apply: true
