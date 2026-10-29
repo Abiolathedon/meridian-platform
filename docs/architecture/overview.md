@@ -2,7 +2,7 @@
 
 The Meridian Retail estate (EXODUS lab fleet) as designed under MER-005. This page is the map; the reasons live in `decisions/` (one ADR per decision); the change plan lives in `../change-records/`; the history in `../PROJECT-JOURNAL.md`.
 
-**Status:** design complete (D0–D9 agreed, MER-005); build underway. E0 foundation (MER-006) and E1 core role library (MER-007) are live on `exodus-dev-app-01`. The built roles and roadmap are catalogued in [role-library.md](../role-library.md).
+**Status:** design complete (D0–D9 agreed, MER-005); build underway. E0 foundation (MER-006), E1 core role library (MER-007) and MER-008 `clone_init` (automated clone onboarding) are live; codified hosts: `exodus-dev-app-01` (.163) and `exodus-qa-app-01` (.180). The built roles and roadmap are catalogued in [role-library.md](../role-library.md).
 
 ## Two layers
 

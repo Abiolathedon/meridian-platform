@@ -3,16 +3,25 @@
 The running record of this project: what was done, when, why, where we are, and what is next.
 Newest entry first. A ticket is not Done until its entry is here. Read **Current state** first.
 
-## Current state (updated 2026-10-25)
+## Current state (updated 2026-10-28)
 
 - **Phase:** C — Build the estate as code · **Sprint 0 — Foundation** — design complete; building underway
-- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9) · MER-006 E0 foundation (Ansible scaffold + baseline role) · MER-007 E1 dev-host onboarding + core role library (baseline molecule, users, dns_resolver, ad_join, parity_check)
+- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9) · MER-006 E0 foundation (Ansible scaffold + baseline role) · MER-007 E1 dev-host onboarding + core role library (baseline molecule, users, dns_resolver, ad_join, parity_check) · MER-008 clone_init role + first fresh-clone onboarding (exodus-qa-app-01)
 - **In progress:** —
-- **Fleet:** 12 VMs on VMware Workstation, 192.168.0.0/24, static block .150–.200; see `architecture/overview.md`. Codified so far: `exodus-dev-app-01` (baseline, users, dns_resolver, ad_join — AD-joined, auditing clean).
-- **Role library:** baseline · users · dns_resolver · ad_join · parity_check (built); clone_init (designed). Catalogue in `role-library.md`.
+- **Fleet:** 12 VMs on VMware Workstation, 192.168.0.0/24, static block .150–.200; see `architecture/overview.md`. Codified so far: `exodus-dev-app-01` (.163) and `exodus-qa-app-01` (.180) — both AD-joined, parity-clean.
+- **Role library:** baseline · users · dns_resolver · ad_join · parity_check · clone_init (all built). Catalogue in `role-library.md`.
 - **Working rules:** record-first — the record is context, not a cage: study the old project, keep what is good, rebuild what was weak properly; one ADR per decision; every change via ticket → branch → PR → CI → review → squash merge
 - **Prior project:** `exodus-change-management` (its own CR-001–CR-013, ADR series) and the masterfile `EXODUS_AUTHORITATIVE_MASTER_ARCHIVE.yaml` — read-only history, referenced not copied
-- **Next:** E2 — apply the five roles across the rest of the fleet (clone_init on fresh clones → parity_check → join); build `clone_init`; raise the Ansible Vault ticket (unattended joins)
+- **Next:** E2 — onboard the rest of the fleet (clone_init → parity_check → join each); raise the per-environment service-accounts/keys ticket (`svc-ansible-<env>`, ADR-0004); raise the Ansible Vault ticket (unattended joins)
+
+## 2026-10-28 — MER-008 clone_init role + first fresh-clone onboarding — DONE
+
+- **What:** built the `clone_init` role — re-stamps a fresh golden-image clone's identity (hostname, machine-id, SSH host keys, static IP), clears the stale golden IP from the control node's `known_hosts`, then reboots onto the new IP. Added `playbooks/onboard-clone.yml` (two plays: Play 1 re-stamps on golden's `.150` and reboots; Play 2 reconnects on the new IP and runs baseline → users → dns_resolver → ad_join → parity_check in gate mode). Added the qa inventory (`exodus-qa-app-01` at `.180`).
+- **Why:** automate the manual post-clone identity step so onboarding a new host is one governed command, not a hand checklist — completing the clone-lifecycle pair with `parity_check`.
+- **Verified:** onboarded a real fresh clone end-to-end — `exodus-qa-app-01` came up re-stamped at `.180`, AD-joined, with `parity_check` **gate PASS**; confirmed via the parity report and `realm list`. `ansible-lint` + Molecule green.
+- **Decisions:** no new ADR — ADR-0011 already records the clone-lifecycle design. Bootstrap detail: a fresh clone only trusts golden's inherited key (`id_ed25519_exodus`), so `onboard-clone.yml` connects with it explicitly (the automation key is installed later by `users`).
+- **Deferred:** per-environment service accounts/keys (`svc-ansible-<env>`, ADR-0004) — own ticket; Ansible Vault — own ticket.
+- **Refs:** issue #21 · PR #22 `b03def9` · docs #23 · note `18_MER-008_clone-init-role-build-full-end-to-end.docx`
 
 ## 2026-10-25 — MER-007 E1 dev-host onboarding + core role library — DONE
 

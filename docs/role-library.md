@@ -2,14 +2,14 @@
 
 Every server in the fleet is configured by **roles** — small, reusable building
 blocks, each responsible for one job. A server's final setup is just the list of
-roles applied to it. This is the current library: five roles are built and
-merged, one is designed, and the rest are the planned path to a full platform.
+roles applied to it. This is the current library: six roles are built and merged,
+and the rest are the planned path to a full platform.
 
-_Repo: `Abiolathedon/meridian-platform` · Last updated: 2026-10-25_
+_Repo: `Abiolathedon/meridian-platform` · Last updated: 2026-10-28_
 
 ## Foundation — built & merged
 
-The core every host receives. Live in the repo and proven on the dev host.
+The core every host receives. Live in the repo and proven on real hosts.
 
 | Role | What it does | Status |
 |------|--------------|--------|
@@ -18,14 +18,7 @@ The core every host receives. Live in the repo and proven on the dev host.
 | `dns_resolver` | Points the server at the right DNS server (the AD/DNS box at 192.168.0.157) the proper way, through NetworkManager. | Built |
 | `ad_join` | Joins the server to the Active Directory domain (`exodus.local`) and sets up AD-based SSH login, so staff sign in with their own AD account. | Built |
 | `parity_check` | A read-only audit that confirms a cloned server kept the golden image's hardening **and** was given its own fresh identity (no clashes). | Built |
-
-## Designed — build pending
-
-Worked out on paper and saved; the next role to build.
-
-| Role | What it does | Status |
-|------|--------------|--------|
-| `clone_init` | Automates the post-clone "make this machine unique" step done by hand today: new machine-id, new SSH host keys, hostname, and static IP — so a fresh clone stamps its own identity, then `parity_check` confirms it. | Designed |
+| `clone_init` | Automates the post-clone "make this machine unique" step: new machine-id, SSH host keys, hostname, and static IP — so a fresh clone stamps its own identity, then `parity_check` confirms it. | Built |
 
 ## Next up — finish the foundation, onboard the fleet
 
@@ -69,5 +62,4 @@ rather than lifted across.
 
 ---
 
-**Status key:** Built = live & merged · Designed = planned on paper ·
-Planned = next to build · Future = as the platform grows
+**Status key:** Built = live & merged · Planned = next to build · Future = as the platform grows
