@@ -1,6 +1,6 @@
 # ADR-0009 — AD-integrated Linux access (implementation)
 
-**Status:** Accepted · 2026-10-25 · MER-007 (E1)
+**Status:** Accepted · 2026-10-25 · MER-007 (E1) · §4 and the sudo gap superseded by [ADR-0012](ADR-0012-per-environment-access-groups.md) (2026-11-05, MER-010)
 **Deciders:** Abiola Osota (Platform Lead, acting as Solutions Architect)
 **Prior art:** ADR-0004 designed the access model (central AD identity, per-environment groups, scoped sudo, break-glass). Old repo — CR-012 (SSSD + `AllowGroups` pilot). This ADR records how that design was first implemented in code, on the dev host, and where it deliberately stops short of the full target for now.
 

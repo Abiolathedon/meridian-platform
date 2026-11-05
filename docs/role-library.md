@@ -5,7 +5,7 @@ blocks, each responsible for one job. A server's final setup is just the list of
 roles applied to it. This is the current library: six roles are built and merged,
 and the rest are the planned path to a full platform.
 
-_Repo: `Abiolathedon/meridian-platform` · Last updated: 2026-10-28_
+_Repo: `Abiolathedon/meridian-platform` · Last updated: 2026-11-05_
 
 ## Foundation — built & merged
 
@@ -16,7 +16,7 @@ The core every host receives. Live in the repo and proven on real hosts.
 | `baseline` | Base setup every server gets: common packages, the correct timezone, and time-sync (NTP) so all clocks agree. | Built |
 | `users` | Creates the accounts a server needs — including the `svc-ansible` automation account, its SSH key, and locked-down sudo rights. | Built |
 | `dns_resolver` | Points the server at the right DNS server (the AD/DNS box at 192.168.0.157) the proper way, through NetworkManager. | Built |
-| `ad_join` | Joins the server to the Active Directory domain (`exodus.local`) and sets up AD-based SSH login, so staff sign in with their own AD account. | Built |
+| `ad_join` | Joins the server to Active Directory (`exodus.local`) and wires up AD-based access — SSH login **and** `sudo` — for the host's per-environment admin group, so staff sign in with their own AD account and escalate with their own password. | Built |
 | `parity_check` | A read-only audit that confirms a cloned server kept the golden image's hardening **and** was given its own fresh identity (no clashes). | Built |
 | `clone_init` | Automates the post-clone "make this machine unique" step: new machine-id, SSH host keys, hostname, and static IP — so a fresh clone stamps its own identity, then `parity_check` confirms it. | Built |
 

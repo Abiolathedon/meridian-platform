@@ -3,16 +3,25 @@
 The running record of this project: what was done, when, why, where we are, and what is next.
 Newest entry first. A ticket is not Done until its entry is here. Read **Current state** first.
 
-## Current state (updated 2026-10-28)
+## Current state (updated 2026-11-05)
 
 - **Phase:** C — Build the estate as code · **Sprint 0 — Foundation** — design complete; building underway
-- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9) · MER-006 E0 foundation (Ansible scaffold + baseline role) · MER-007 E1 dev-host onboarding + core role library (baseline molecule, users, dns_resolver, ad_join, parity_check) · MER-008 clone_init role + first fresh-clone onboarding (exodus-qa-app-01)
+- **Done:** MER-001 repo · MER-002 CI (yamllint) · MER-003 labels, templates, board · MER-004 `main` protected · MER-005 fleet architecture design (D0–D9) · MER-006 E0 foundation (Ansible scaffold + baseline role) · MER-007 E1 dev-host onboarding + core role library (baseline molecule, users, dns_resolver, ad_join, parity_check) · MER-008 clone_init role + first fresh-clone onboarding (exodus-qa-app-01) · MER-010 per-environment access groups + group sudo (dev, qa)
 - **In progress:** —
-- **Fleet:** 12 VMs on VMware Workstation, 192.168.0.0/24, static block .150–.200; see `architecture/overview.md`. Codified so far: `exodus-dev-app-01` (.163) and `exodus-qa-app-01` (.180) — both AD-joined, parity-clean.
-- **Role library:** baseline · users · dns_resolver · ad_join · parity_check · clone_init (all built). Catalogue in `role-library.md`.
+- **Fleet:** 12 VMs on VMware Workstation, 192.168.0.0/24, static block .150–.200; see `architecture/overview.md`. Codified so far: `exodus-dev-app-01` (.163) and `exodus-qa-app-01` (.180) — both AD-joined, parity-clean, and on per-environment access groups (`sg-dev-admins` / `sg-qa-admins`) with group sudo.
+- **Role library:** baseline · users · dns_resolver · ad_join (now also grants the access group sudo) · parity_check · clone_init (all built). Catalogue in `role-library.md`.
 - **Working rules:** record-first — the record is context, not a cage: study the old project, keep what is good, rebuild what was weak properly; one ADR per decision; every change via ticket → branch → PR → CI → review → squash merge
 - **Prior project:** `exodus-change-management` (its own CR-001–CR-013, ADR series) and the masterfile `EXODUS_AUTHORITATIVE_MASTER_ARCHIVE.yaml` — read-only history, referenced not copied
-- **Next:** E2 — onboard the rest of the fleet (clone_init → parity_check → join each); raise the per-environment service-accounts/keys ticket (`svc-ansible-<env>`, ADR-0004); raise the Ansible Vault ticket (unattended joins)
+- **Next:** E2 — onboard the rest of the fleet (clone_init → parity_check → join each), each adopting its per-environment access group; retire the now-inert flat `sg-linux-access` group (revoke its `realm permit` on dev/qa); raise the per-environment service-accounts/keys ticket (`svc-ansible-<env>`, ADR-0004); raise the Ansible Vault ticket (unattended joins)
+
+## 2026-11-05 — MER-010 per-environment access groups + group sudo — DONE
+
+- **What:** moved dev and qa off the flat `sg-linux-access` group onto per-environment admin groups (`sg-dev-admins`, `sg-qa-admins`) and gave each environment's group password-required `sudo`. Created the five `sg-<env>-admins` AD groups plus one test user each and the multi-environment `abiola.osota` persona on `exodus-ad-01` via Ansible over WinRM (`microsoft.ad`). Added an `ad_join` task that writes a `visudo`-validated `/etc/sudoers.d/80-ad-access-sudo` for `%{{ ad_join_access_group }}`; set the per-environment override in each inventory's `group_vars/all.yml` (one variable already drives `realm permit`, SSH `AllowGroups`, and the password `Match Group`).
+- **Why:** enforce the environment isolation ADR-0004 designed — a dev admin reaches dev only, a qa admin qa only — and give AD admins their own `sudo`, closing ADR-0009's temporary flat-group and no-sudo gaps.
+- **Verified:** proven end-to-end on dev and qa — `dev.user` logs in + sudo on dev and is refused on qa; `qa.user` the mirror; `abiola.osota` (dev+qa+staging+mgmt, not prod) reaches both. Humans authenticate by password and re-enter it to sudo; `svc-ansible`/`exodus-admin` stay key-only with NOPASSWD. `ansible-lint` green (production profile, whole repo).
+- **Decisions:** ADR-0012 (per-environment access groups), superseding ADR-0009 §4 and its sudo gap. Prod held tightest — `abiola.osota` deliberately not in `sg-prod-admins`.
+- **Deferred:** revoke the inert `sg-linux-access` `realm permit` and retire the group; apply the same override to staging/prod/mgmt when onboarded; per-environment service accounts (`svc-ansible-<env>`); Ansible Vault; ansible-core 2.14 is EOL (`microsoft.ad` pinned 1.6.0) — toolchain upgrade decision.
+- **Refs:** issue #25 · PR #26 `e21dde0` · docs #27 · note `21_MER-010_per-environment-access.docx`
 
 ## 2026-10-28 — MER-008 clone_init role + first fresh-clone onboarding — DONE
 
