@@ -3,3 +3,10 @@
 
 ansible_user: svc-ansible                                # dedicated automation account (exodus-admin is break-glass only)
 ansible_ssh_private_key_file: ~/.ssh/id_ed25519_ansible  # same automation key — svc-ansible now trusts it
+
+# -- Per-environment access group for the dev hosts.
+#    Overrides the ad_join role's default (sg-linux-access@exodus.local).
+#    This is the AD group that dev hosts allow to log in, SSH, and sudo.
+#    Written lowercase + @exodus.local because that is how the host resolves
+#    the AD group "SG-Dev-Admins" (verified earlier: id dev.user@exodus.local).
+ad_join_access_group: "sg-dev-admins@exodus.local"

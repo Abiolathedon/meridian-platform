@@ -91,3 +91,23 @@
     - name: Validate the SSH configuration
       ansible.builtin.command: sshd -t
       changed_when: false       # a test, not a change
+
+    # -- 8. Sudo: let the AD access group run admin commands -----------
+    - name: Grant sudo to the AD access group
+      # [MODULE] ansible.builtin.copy -> write a sudoers drop-in file.
+      ansible.builtin.copy:
+        # WHERE: a file in /etc/sudoers.d/. sudo reads every file in there.
+        #        One file = one rule, easy to manage and remove.
+        dest: /etc/sudoers.d/80-ad-access-sudo
+        content: |
+          # Managed by the ad_join role. The environment's AD access group
+          # may use sudo. Humans re-enter their OWN password each time,
+          # unlike svc-ansible / exodus-admin which are NOPASSWD.
+          %{{ ad_join_access_group }} ALL=(ALL) ALL
+        owner: root
+        group: root
+        mode: "0440"               # sudoers files MUST be 0440 (root read-only)
+        # [KEYWORD] validate -> before putting the file in place, test it
+        #   with `visudo -cf` on a TEMP copy. If the syntax is wrong, the
+        #   file is NOT installed and the task fails safely. %s = temp path.
+        validate: "visudo -cf %s"
