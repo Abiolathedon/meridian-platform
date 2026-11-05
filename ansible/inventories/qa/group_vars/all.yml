@@ -1,0 +1,13 @@
+---
+# all.yml — connection settings shared by EVERY host in the qa inventory.
+# Mirrors the dev inventory: Ansible connects as the automation account
+# svc-ansible with its key, and qa hosts use the qa admin group.
+
+ansible_user: svc-ansible                                # dedicated automation account (exodus-admin is break-glass only)
+ansible_ssh_private_key_file: ~/.ssh/id_ed25519_ansible  # svc-ansible's automation key
+
+# -- Per-environment access group for the qa hosts.
+#    Overrides the ad_join role's default (sg-linux-access@exodus.local).
+#    The AD group that qa hosts allow to log in, SSH, and sudo.
+#    Written lowercase + @exodus.local, the form the host resolves (same as dev).
+ad_join_access_group: "sg-qa-admins@exodus.local"
