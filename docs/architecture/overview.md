@@ -2,7 +2,7 @@
 
 The Meridian Retail estate (EXODUS lab fleet) as designed under MER-005. This page is the map; the reasons live in `decisions/` (one ADR per decision); the change plan lives in `../change-records/`; the history in `../PROJECT-JOURNAL.md`.
 
-**Status:** design complete (D0–D9 agreed, MER-005); build underway. E0 foundation (MER-006), E1 core role library (MER-007) and MER-008 `clone_init` (automated clone onboarding) are live; codified hosts: `exodus-dev-app-01` (.163) and `exodus-qa-app-01` (.180). The built roles and roadmap are catalogued in [role-library.md](../role-library.md).
+**Status:** design complete (D0–D9 agreed, MER-005); build underway. E0 foundation (MER-006), E1 core role library (MER-007), MER-008 `clone_init` (automated clone onboarding), and MER-010 per-environment access (dev + qa on `sg-dev-admins` / `sg-qa-admins` with group sudo) are live; codified hosts: `exodus-dev-app-01` (.163) and `exodus-qa-app-01` (.180). The built roles and roadmap are catalogued in [role-library.md](../role-library.md).
 
 ## Two layers
 
@@ -91,7 +91,7 @@ Central identity, per-environment RBAC, least privilege. Full reasoning in [ADR-
 | Privilege | `sudo` via per-group drop-ins in `/etc/sudoers.d/`, no blanket `wheel` |
 | Break-glass | one sealed local account per host; escrowed, logged, alerted |
 
-Built in E1 via the `ad_join` role (realmd/SSSD join + `AllowGroups`/`Match Group` SSH), on a flat `sg-linux-access` group for now; per-environment groups follow at fleet onboarding. Implementation and credential handling in [ADR-0009](decisions/ADR-0009-ad-integrated-linux-access.md) and [ADR-0010](decisions/ADR-0010-join-credential-handling.md).
+Built in E1 via the `ad_join` role (realmd/SSSD join + `AllowGroups`/`Match Group` SSH). dev and qa now run the per-environment groups (`sg-dev-admins` / `sg-qa-admins`) with group `sudo` (MER-010); the remaining environments adopt them at onboarding, and the flat `sg-linux-access` group is retired once all hosts have moved. Implementation and credential handling in [ADR-0009](decisions/ADR-0009-ad-integrated-linux-access.md), [ADR-0010](decisions/ADR-0010-join-credential-handling.md) and [ADR-0012](decisions/ADR-0012-per-environment-access-groups.md).
 
 ## Automation & role library (D5)
 
@@ -126,7 +126,4 @@ Reuse + codify in place, build new from code, in ordered reversible slices (E0�
 - [ADR-0009 — AD-integrated Linux access](decisions/ADR-0009-ad-integrated-linux-access.md)
 - [ADR-0010 — Join-credential handling](decisions/ADR-0010-join-credential-handling.md)
 - [ADR-0011 — Clone lifecycle](decisions/ADR-0011-clone-lifecycle.md)
-
-## Change records
-
-- [CR-001 — Transition to the target architecture](../change-records/CR-001-transition-to-target-architecture.md)
+- [ADR-0012 — Per-environment access groups](decisions/ADR-0012-per-environment-access-groups.md)
