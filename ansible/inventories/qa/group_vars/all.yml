@@ -1,13 +1,27 @@
 ---
 # all.yml — connection settings shared by EVERY host in the qa inventory.
-# Mirrors the dev inventory: Ansible connects as the automation account
-# svc-ansible with its key, and qa hosts use the qa admin group.
 
-ansible_user: svc-ansible                                # dedicated automation account (exodus-admin is break-glass only)
-ansible_ssh_private_key_file: ~/.ssh/id_ed25519_ansible  # svc-ansible's automation key
+# PASS 2 (MER-012): switched to svc-ansible-qa (proven working) and the old
+# shared svc-ansible is now retired from qa.
+ansible_user: svc-ansible-qa                                # per-env automation account (switched) -> consumed by Ansible's SSH connection
+ansible_ssh_private_key_file: ~/.ssh/id_ed25519_ansible_qa  # the qa automation key on the control node (switched)
 
-# -- Per-environment access group for the qa hosts.
-#    Overrides the ad_join role's default (sg-linux-access@exodus.local).
-#    The AD group that qa hosts allow to log in, SSH, and sudo.
-#    Written lowercase + @exodus.local, the form the host resolves (same as dev).
+# -- Per-environment access group for the qa hosts (MER-010).
+#    Overrides ad_join's default (sg-linux-access@exodus.local) -> roles/ad_join/defaults/main.yml
 ad_join_access_group: "sg-qa-admins@exodus.local"
+
+# -- Per-environment automation account for qa (MER-012).
+#    Overrides the users role default list -> roles/users/defaults/main.yml
+users_accounts:
+  - name: svc-ansible-qa
+    comment: "Ansible automation service account (qa)"
+    shell: /bin/bash
+    sudo_nopasswd: true                                     # -> users role writes /etc/sudoers.d/svc-ansible-qa (NOPASSWD)
+    ssh_allow: true
+    authorized_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL9OfIUOw9KxzBkDhV4ZdblCDLBKfjKYrl8hxN6tPBww svc-ansible-qa@exodus"
+
+# -- SSH admission for qa (MER-012, PASS 2).
+#    Overrides ad_join's default "wheel {{ ad_join_access_group }} svc-ansible"
+#    -> roles/ad_join/defaults/main.yml. The old flat svc-ansible is DROPPED:
+#    only wheel (local admins), the qa admin group, and svc-ansible-qa may SSH in.
+ad_join_ssh_allow_groups: "wheel {{ ad_join_access_group }} svc-ansible-qa"
