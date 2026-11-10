@@ -1,12 +1,26 @@
 ---
 # all.yml — connection settings shared by EVERY host in the dev inventory.
 
-ansible_user: svc-ansible                                # dedicated automation account (exodus-admin is break-glass only)
-ansible_ssh_private_key_file: ~/.ssh/id_ed25519_ansible  # same automation key — svc-ansible now trusts it
+# Ansible connects as svc-ansible-dev with the dev key (switched and proven).
+ansible_user: svc-ansible-dev                                # per-env automation account
+ansible_ssh_private_key_file: ~/.ssh/id_ed25519_ansible_dev  # the dev automation key
 
-# -- Per-environment access group for the dev hosts.
-#    Overrides the ad_join role's default (sg-linux-access@exodus.local).
-#    This is the AD group that dev hosts allow to log in, SSH, and sudo.
-#    Written lowercase + @exodus.local because that is how the host resolves
-#    the AD group "SG-Dev-Admins" (verified earlier: id dev.user@exodus.local).
+# -- Per-environment access group for the dev hosts (MER-010).
 ad_join_access_group: "sg-dev-admins@exodus.local"
+
+# -- Per-environment automation account for dev (MER-012).
+#    Overrides the users role default. dev builds svc-ansible-dev, trusting
+#    ONLY the dev automation key's public half.
+users_accounts:
+  - name: svc-ansible-dev
+    comment: "Ansible automation service account (dev)"
+    shell: /bin/bash
+    sudo_nopasswd: true
+    ssh_allow: true
+    authorized_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ4VxyTRZ3/cYQB/fZAWHar8YTMITlXaoLOVAV88X2Ip svc-ansible-dev@exodus"
+
+# -- SSH admission for dev (MER-012).
+#    Overrides ad_join's default. Now that svc-ansible-dev is proven and in use,
+#    the old flat svc-ansible is DROPPED from the entry list — only wheel
+#    (local admins), the dev admin group, and svc-ansible-dev may SSH into dev.
+ad_join_ssh_allow_groups: "wheel {{ ad_join_access_group }} svc-ansible-dev"
