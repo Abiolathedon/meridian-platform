@@ -14,6 +14,15 @@ Newest entry first. A ticket is not Done until its entry is here. Read **Current
 - **Prior project:** `exodus-change-management` (its own CR-001–CR-013, ADR series) and the masterfile `EXODUS_AUTHORITATIVE_MASTER_ARCHIVE.yaml` — read-only history, referenced not copied
 - **Next:** E2 — onboard the rest of the fleet (clone_init → parity_check → join each), each adopting its per-environment access group; retire the now-inert flat `sg-linux-access` group (revoke its `realm permit` on dev/qa); raise the per-environment service-accounts/keys ticket (`svc-ansible-<env>`, ADR-0004); raise the Ansible Vault ticket (unattended joins)
 
+## 2026-11-10 — MER-012 per-environment service accounts — DONE
+
+- **What:** retired the single shared `svc-ansible` automation account on dev and qa and replaced it with per-environment service accounts (`svc-ansible-dev`, `svc-ansible-qa`) — each key-only with NOPASSWD sudo and its own ed25519 automation key (`id_ed25519_ansible_<env>`). Done purely through inventory: each `group_vars/all.yml` switched `ansible_user` + `ansible_ssh_private_key_file`, added the account via a `users_accounts` override, and dropped the flat `svc-ansible` from `ad_join_ssh_allow_groups` — roles unchanged. Each host converted in two safe passes (create + admit both → switch + retire).
+- **Why:** one automation credential spanning every environment breaks the isolation the per-environment model enforces — the machine mirror of the flat `sg-linux-access` group retired for humans in MER-010. A leaked environment key is now contained to that environment.
+- **Verified:** on dev and qa the new `svc-ansible-<env>` runs the play clean and the old `svc-ansible` is refused by raw `ssh` (Permission denied). `ansible-lint` green (production profile, 89 files); CI `ci/lint` green.
+- **Decisions:** ADR-0013 (per-environment service accounts), superseding ADR-0012 point 4 (the flat `svc-ansible`). Lesson: Ansible `-u` is lowest precedence and is overridden by inventory `ansible_user` — test real access with raw `ssh` or `-e ansible_user=...`, never `-u`.
+- **Deferred:** `svc-ansible-staging`/`prod`/`mgmt` when those hosts onboard; fully delete the SSH-blocked flat `svc-ansible` local account; retire the inert `sg-linux-access` group; Ansible Vault; ansible-core 2.14 EOL toolchain upgrade.
+- **Refs:** issue #29 · PR #30 `e2302fa` · docs #31 · notes 32–33 (MER-012)
+
 ## 2026-11-05 — MER-010 per-environment access groups + group sudo — DONE
 
 - **What:** moved dev and qa off the flat `sg-linux-access` group onto per-environment admin groups (`sg-dev-admins`, `sg-qa-admins`) and gave each environment's group password-required `sudo`. Created the five `sg-<env>-admins` AD groups plus one test user each and the multi-environment `abiola.osota` persona on `exodus-ad-01` via Ansible over WinRM (`microsoft.ad`). Added an `ad_join` task that writes a `visudo`-validated `/etc/sudoers.d/80-ad-access-sudo` for `%{{ ad_join_access_group }}`; set the per-environment override in each inventory's `group_vars/all.yml` (one variable already drives `realm permit`, SSH `AllowGroups`, and the password `Match Group`).
