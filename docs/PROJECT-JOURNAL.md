@@ -14,6 +14,21 @@ Newest entry first. A ticket is not Done until its entry is here. Read **Current
 - **Prior project:** `exodus-change-management` (its own CR-001–CR-013, ADR series) and the masterfile `EXODUS_AUTHORITATIVE_MASTER_ARCHIVE.yaml` — read-only history, referenced not copied
 - **Next:** E2 — onboard the rest of the fleet (clone_init → parity_check → join each), each adopting its per-environment access group; retire the now-inert flat `sg-linux-access` group (revoke its `realm permit` on dev/qa); raise the per-environment service-accounts/keys ticket (`svc-ansible-<env>`, ADR-0004); raise the Ansible Vault ticket (unattended joins)
 
+## 2026-11-14 — MER-014 Ubuntu golden image + cross-distro baseline — DONE
+
+**What:** Built a hardened Ubuntu Server 24.04 LTS golden image (`exodus-ubuntu-golden`), snapshotted as `ubuntu-golden-hardened`, as the clone-from base for Ubuntu hosts — first the observability node. Proved the existing `baseline` role is cross-distro.
+
+**Why:** The observability stack (Loki + Alloy, keeping Prometheus + Grafana) runs on Ubuntu — a second distro on the fleet, matching UK market demand. It needed a gold baseline equal to the RHEL golden.
+
+**How:**
+- Hardened by hand, mirroring the RHEL golden with Ubuntu's equivalent tools: UFW (vs firewalld), AppArmor (vs SELinux), unattended-upgrades (vs dnf-automatic), apt (vs dnf).
+- Stripped multipathd via disable + mask (NOT purge — purge would drag out `ubuntu-server-minimal`). SSH key-only, no root, no password via `00-exodus-ssh-hardening.conf` (sorts before cloud-init's `50-`, so it wins). sysctl + journald drop-ins byte-identical to the RHEL golden.
+- Verified the `baseline` role runs green AND idempotent (`changed=0`) on BOTH Rocky 9 and Ubuntu 24.04 via Molecule. chrony was already in the common package list, so **no role code change was needed** — the role was cross-distro by design.
+
+**Outcome:** Cross-distro baseline proven. Hardening is baked into the image (Model 1); lifting it into role tasks is a future "hardening-as-code" epic.
+
+**Refs:** issue #33 · PR #34 · runbook `docs/runbooks/ubuntu-golden-hardening.md` · notes 35–36
+
 ## 2026-11-10 — MER-012 per-environment service accounts — DONE
 
 - **What:** retired the single shared `svc-ansible` automation account on dev and qa and replaced it with per-environment service accounts (`svc-ansible-dev`, `svc-ansible-qa`) — each key-only with NOPASSWD sudo and its own ed25519 automation key (`id_ed25519_ansible_<env>`). Done purely through inventory: each `group_vars/all.yml` switched `ansible_user` + `ansible_ssh_private_key_file`, added the account via a `users_accounts` override, and dropped the flat `svc-ansible` from `ad_join_ssh_allow_groups` — roles unchanged. Each host converted in two safe passes (create + admit both → switch + retire).
