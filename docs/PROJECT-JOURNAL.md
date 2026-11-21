@@ -14,6 +14,21 @@ Newest entry first. A ticket is not Done until its entry is here. Read **Current
 - **Prior project:** `exodus-change-management` (its own CR-001–CR-013, ADR series) and the masterfile `EXODUS_AUTHORITATIVE_MASTER_ARCHIVE.yaml` — read-only history, referenced not copied
 - **Next:** E2 — onboard the rest of the fleet (clone_init → parity_check → join each), each adopting its per-environment access group; retire the now-inert flat `sg-linux-access` group (revoke its `realm permit` on dev/qa); raise the per-environment service-accounts/keys ticket (`svc-ansible-<env>`, ADR-0004); raise the Ansible Vault ticket (unattended joins)
 
+
+## 2026-11-21 — MER-015 observability node onboarded to AD (first Ubuntu host, manual) — DONE
+
+**What:** Onboarded the first Ubuntu fleet member — `exodus-observability-02` (.165) — by hand: cloned the hardened Ubuntu golden, re-stamped identity (hostname, machine-id, SSH host keys), set a static IP via netplan, disabled cloud-init, joined Active Directory, and applied the per-environment access model (`sg-mgmt-admins` password login + password sudo; `exodus-admin` key-only; home dirs auto-created). Tested end-to-end.
+
+**Why:** The observability stack (Prometheus + Grafana + Loki + Alloy) runs on Ubuntu. Onboarding revealed the foundation roles (`clone_init`, `dns_resolver`, `ad_join`, `parity_check`) are RHEL-specific (nmcli/NetworkManager, RHEL packages, SELinux/firewalld), so the host was onboarded Ubuntu-native by hand rather than blocking on a cross-distro role rewrite.
+
+**How:** netplan static IP (not nmcli); cloud-init disabled so hand-managed config persists; realmd/sssd/adcli with the Ubuntu package set; `pam-auth-update --enable mkhomedir`; sshd drop-in (`AllowGroups sudo` + `Match Group` password); `sudoers.d/80-ad-access-sudo`. Verified: static IP + identity persist across reboot; `realm list` kerberos-member; exodus-admin key login (no lockout); AD user `abiola.osota` password login + sudo -> root.
+
+**Decisions:** ADR-0014 (manual-first onboarding; cross-distro foundation roles deferred to a dedicated epic).
+
+**Deferred (cross-distro epic):** Debian branches for the four foundation roles (Molecule-tested on both); `svc-ansible-mgmt` automation account; register the node in the management inventory.
+
+**Refs:** issue #35 · PR #36 · ADR-0014 · runbook `docs/runbooks/ubuntu-ad-onboarding.md` · notes 38-39
+
 ## 2026-11-14 — MER-014 Ubuntu golden image + cross-distro baseline — DONE
 
 **What:** Built a hardened Ubuntu Server 24.04 LTS golden image (`exodus-ubuntu-golden`), snapshotted as `ubuntu-golden-hardened`, as the clone-from base for Ubuntu hosts — first the observability node. Proved the existing `baseline` role is cross-distro.
